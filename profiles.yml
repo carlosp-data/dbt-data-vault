@@ -1,0 +1,23 @@
+tasty_bytes:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('SF_ACCOUNT') }}"
+      user: "{{ env_var('SF_USER') }}"
+      password: "{{ env_var('SF_PASSWORD') }}"
+      warehouse: "{{ env_var('SF_WAREHOUSE') }}"
+      database: tasty_bytes
+      schema: dev
+      role: dev_role
+      threads: 16
+    prod:
+      type: snowflake
+      account: "{{ env_var('SF_ACCOUNT') }}"
+      user: "{{ env_var('SF_USER') }}"
+      password: "{{ env_var('SF_PASSWORD') }}"
+      warehouse: "{{ env_var('SF_WAREHOUSE') }}"
+      database: tasty_bytes
+      schema: prod
+      role: prod_role
+      threads: 16

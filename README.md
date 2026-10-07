@@ -8,4 +8,4 @@ analytics engineering best practices.
 # License
 
 This is a personal portfolio project. The source code is provided for viewing
-and evaluation purposes only. All rights reserved. See `LICENSE` for details.
+and evaluation purposes only. All rights reserved. See [LICENSE](LICENSE) for details.

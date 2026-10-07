@@ -43,12 +43,12 @@ renamed as (
 final as (
 
     select
-        {{ dbt_utils.generate_surrogate_key(['order_id']) }} as order_hk,
-        {{ dbt_utils.generate_surrogate_key(['truck_id']) }} as truck_hk,
-        {{ dbt_utils.generate_surrogate_key(['location_id']) }} as location_hk,
-        {{ dbt_utils.generate_surrogate_key(['customer_id']) }} as customer_hk,
-        {{ dbt_utils.generate_surrogate_key(['shift_id']) }} as shift_hk,
-        {{ dbt_utils.generate_surrogate_key([
+        {{ hash_key(['order_id']) }} as order_hk,
+        {{ hash_key(['truck_id']) }} as truck_hk,
+        {{ hash_key(['location_id']) }} as location_hk,
+        {{ hash_key(['customer_id']) }} as customer_hk,
+        {{ hash_key(['shift_id']) }} as shift_hk,
+        {{ hash_key([
             'customer_id',
             'location_id',
             'order_id',

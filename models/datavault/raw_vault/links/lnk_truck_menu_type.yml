@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: lnk_truck_menu_type
+    description: >
+      Link between a truck and the menu type (brand) it sells, one row per (truck, menu type)
+      pair ever seen. Grain: `truck_menu_type_hk` (primary key). Loaded from `stg_raw__trucks`.
+      Insert-only, built with the `link` macro.
+    columns:
+      - name: truck_menu_type_hk
+        description: Link hash key of (`menu_type_id`, `truck_id`).
+        data_tests:
+          - unique
+          - not_null
+      - name: truck_hk
+        description: Hash key of the truck.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_truck')
+                field: truck_hk
+      - name: menu_type_hk
+        description: Hash key of the menu type.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_menu_type')
+                field: menu_type_hk
+      - name: load_dts
+        description: Load timestamp of the batch that first saw the pair.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table of the first row loaded for the pair.
+        data_tests:
+          - not_null

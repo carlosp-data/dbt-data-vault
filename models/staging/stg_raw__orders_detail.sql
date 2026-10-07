@@ -34,9 +34,9 @@ renamed as (
 final as (
 
     select
-        {{ dbt_utils.generate_surrogate_key(['order_id']) }} as order_hk,
-        {{ dbt_utils.generate_surrogate_key(['product_id']) }} as product_hk,
-        {{ dbt_utils.generate_surrogate_key(['line_number', 'order_id', 'product_id']) }} as order_line_hk,
+        {{ hash_key(['order_id']) }} as order_hk,
+        {{ hash_key(['product_id']) }} as product_hk,
+        {{ hash_key(['line_number', 'order_id', 'product_id']) }} as order_line_hk,
         order_detail_id,
         order_id,
         product_id,

@@ -1,0 +1,70 @@
+version: 2
+
+models:
+  - name: sat_product_pricing
+    description: >
+      Cost of goods and list sale price of products (menu items), the main source of SCD2
+      history for `dim_product`. One row per product and price change. Grain: (`product_hk`,
+      `load_dts`). Loaded from `stg_raw__products`. Insert-only,
+      built with the `sat` macro. Includes the ghost record (NULL payload).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['product_hk', 'load_dts']
+    columns:
+      - name: product_hk
+        description: Hash key of the parent product. All zeros for the ghost record.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_product')
+                field: product_hk
+      - name: load_dts
+        description: Load timestamp of the batch that inserted this version. 1900-01-01 for the ghost record.
+        data_tests:
+          - not_null
+      - name: product_pricing_hashdiff
+        description: Hashdiff over `cost_of_goods_usd` and `sale_price_usd`. All zeros for the ghost record.
+        data_tests:
+          - not_null
+      - name: cost_of_goods_usd
+        description: Cost of goods of one unit, in USD.
+      - name: sale_price_usd
+        description: List sale price of one unit, in USD.
+      - name: record_source
+        description: Source table of this version. 'SYSTEM' for the ghost record.
+        data_tests:
+          - not_null
+
+unit_tests:
+  - name: sat_product_pricing_incremental_detects_hashdiff_changes
+    description: >
+      On an incremental run, a row is inserted for a new product and for a product whose
+      hashdiff differs from its latest row (even when it returns to an earlier value). An
+      unchanged product and the ghost record (already loaded) are skipped.
+    model: sat_product_pricing
+    overrides:
+      vars:
+        load_dts: '2026-01-01 00:00:00'
+      macros:
+        is_incremental: true
+    given:
+      - input: this
+        rows:
+          - {product_hk: '00000000000000000000000000000000', load_dts: '1900-01-01 00:00:00', product_pricing_hashdiff: '00000000000000000000000000000000', record_source: 'SYSTEM'}
+          - {product_hk: 'hk_p1', load_dts: '2025-01-01 00:00:00', product_pricing_hashdiff: 'hd_p1_v1', cost_of_goods_usd: 1.00, sale_price_usd: 3.00, record_source: 'tasty_bytes.source.products'}
+          - {product_hk: 'hk_p1', load_dts: '2025-06-01 00:00:00', product_pricing_hashdiff: 'hd_p1_v2', cost_of_goods_usd: 1.00, sale_price_usd: 3.50, record_source: 'tasty_bytes.source.products'}
+          - {product_hk: 'hk_p2', load_dts: '2025-01-01 00:00:00', product_pricing_hashdiff: 'hd_p2_v1', cost_of_goods_usd: 2.00, sale_price_usd: 5.00, record_source: 'tasty_bytes.source.products'}
+      - input: ref('stg_raw__products')
+        rows:
+          # price goes back to the first version
+          - {product_hk: 'hk_p1', product_pricing_hashdiff: 'hd_p1_v1', cost_of_goods_usd: 1.00, sale_price_usd: 3.00, record_source: 'tasty_bytes.source.products'}
+          # unchanged
+          - {product_hk: 'hk_p2', product_pricing_hashdiff: 'hd_p2_v1', cost_of_goods_usd: 2.00, sale_price_usd: 5.00, record_source: 'tasty_bytes.source.products'}
+          # new product
+          - {product_hk: 'hk_p3', product_pricing_hashdiff: 'hd_p3_v1', cost_of_goods_usd: 0.50, sale_price_usd: 2.00, record_source: 'tasty_bytes.source.products'}
+    expect:
+      rows:
+        - {product_hk: 'hk_p1', load_dts: '2026-01-01 00:00:00', product_pricing_hashdiff: 'hd_p1_v1', cost_of_goods_usd: 1.00, sale_price_usd: 3.00, record_source: 'tasty_bytes.source.products'}
+        - {product_hk: 'hk_p3', load_dts: '2026-01-01 00:00:00', product_pricing_hashdiff: 'hd_p3_v1', cost_of_goods_usd: 0.50, sale_price_usd: 2.00, record_source: 'tasty_bytes.source.products'}

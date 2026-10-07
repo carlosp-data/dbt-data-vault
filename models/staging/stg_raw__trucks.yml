@@ -7,7 +7,7 @@ models:
       Grain: `truck_id` (primary key). Each truck belongs to one franchise and sells one menu
       type (brand). Company-operated trucks (`is_franchise = false`) belong to franchise 1.
       The primary city and country are the business key of `hub_city`, so a change of primary
-      city shows up as a new `truck_city_hk` instead of a new `truck_hashdiff`.
+      city shows up as a new `truck_city_hk` instead of a new `truck_details_hashdiff`.
       Feeds `hub_truck`, `hub_city`, the truck ↔ franchise, truck ↔ menu type and truck ↔ city
       links (the last one with `esat_truck_city`), and `sat_truck_details`.
     columns:
@@ -96,7 +96,7 @@ models:
         description: Model year of the vehicle.
       - name: truck_opening_date
         description: Date the truck started operating.
-      - name: truck_hashdiff
+      - name: truck_details_hashdiff
         description: Hashdiff over the descriptive attributes of the truck, excluding city and country (tracked by the truck ↔ city link).
         data_tests:
           - not_null

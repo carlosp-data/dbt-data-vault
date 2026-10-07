@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: lnk_customer_city
+    description: >
+      Link between a customer and the city where they live, one row per (customer, city) pair
+      ever seen. Grain: `customer_city_hk` (primary key). A move adds a new pair;
+      `esat_customer_city` tells which pair is current. Loaded from `stg_raw__customers`.
+      Insert-only, built with the `link` macro.
+    columns:
+      - name: customer_city_hk
+        description: Link hash key of (`city`, `country`, `customer_id`).
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_hk
+        description: Hash key of the customer. Driving key of `esat_customer_city`.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_customer')
+                field: customer_hk
+      - name: city_hk
+        description: Hash key of the city.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_city')
+                field: city_hk
+      - name: load_dts
+        description: Load timestamp of the batch that first saw the pair.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table of the first row loaded for the pair.
+        data_tests:
+          - not_null

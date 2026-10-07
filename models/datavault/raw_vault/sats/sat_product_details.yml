@@ -1,0 +1,52 @@
+version: 2
+
+models:
+  - name: sat_product_details
+    description: >
+      Descriptive attributes of products (menu items): names, category and health metrics.
+      Prices are in `sat_product_pricing`, which changes at a different rate. One row per
+      product and change. Grain: (`product_hk`, `load_dts`). Loaded
+      from `stg_raw__products`. Insert-only, built with the `sat` macro. Includes the ghost record (NULL payload).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['product_hk', 'load_dts']
+    columns:
+      - name: product_hk
+        description: Hash key of the parent product. All zeros for the ghost record.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_product')
+                field: product_hk
+      - name: load_dts
+        description: Load timestamp of the batch that inserted this version. 1900-01-01 for the ghost record.
+        data_tests:
+          - not_null
+      - name: product_details_hashdiff
+        description: Hashdiff over the payload columns. All zeros for the ghost record.
+        data_tests:
+          - not_null
+      - name: menu_product_id
+        description: Source identifier of the menu row (`menu_id`).
+      - name: product_name
+        description: Name of the product.
+      - name: product_category
+        description: Category of the product ('Beverage', 'Dessert', 'Main' or 'Snack').
+      - name: product_subcategory
+        description: Serving temperature of the product ('Cold Option', 'Hot Option' or 'Warm Option').
+      - name: is_healthy
+        description: True when the product is flagged as healthy.
+      - name: is_dairy_free
+        description: True when the product is dairy-free.
+      - name: is_gluten_free
+        description: True when the product is gluten-free.
+      - name: is_nut_free
+        description: True when the product is nut-free.
+      - name: ingredients
+        description: Array of ingredient names.
+      - name: record_source
+        description: Source table of this version. 'SYSTEM' for the ghost record.
+        data_tests:
+          - not_null

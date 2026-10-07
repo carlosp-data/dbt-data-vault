@@ -30,13 +30,13 @@ renamed as (
 final as (
 
     select
-        {{ dbt_utils.generate_surrogate_key(['truck_id']) }} as truck_hk,
-        {{ dbt_utils.generate_surrogate_key(['franchise_id']) }} as franchise_hk,
-        {{ dbt_utils.generate_surrogate_key(['menu_type_id']) }} as menu_type_hk,
-        {{ dbt_utils.generate_surrogate_key(['city', 'country']) }} as city_hk,
-        {{ dbt_utils.generate_surrogate_key(['franchise_id', 'truck_id']) }} as truck_franchise_hk,
-        {{ dbt_utils.generate_surrogate_key(['menu_type_id', 'truck_id']) }} as truck_menu_type_hk,
-        {{ dbt_utils.generate_surrogate_key(['city', 'country', 'truck_id']) }} as truck_city_hk,
+        {{ hash_key(['truck_id']) }} as truck_hk,
+        {{ hash_key(['franchise_id']) }} as franchise_hk,
+        {{ hash_key(['menu_type_id']) }} as menu_type_hk,
+        {{ hash_key(['city', 'country']) }} as city_hk,
+        {{ hash_key(['franchise_id', 'truck_id']) }} as truck_franchise_hk,
+        {{ hash_key(['menu_type_id', 'truck_id']) }} as truck_menu_type_hk,
+        {{ hash_key(['city', 'country', 'truck_id']) }} as truck_city_hk,
         truck_id,
         menu_type_id,
         franchise_id,
@@ -61,7 +61,7 @@ final as (
             'truck_opening_date',
             'truck_region',
             'truck_region_code'
-        ]) }} as truck_hashdiff,
+        ]) }} as truck_details_hashdiff,
         {{ record_source(source('raw', 'trucks')) }} as record_source
     from renamed
 

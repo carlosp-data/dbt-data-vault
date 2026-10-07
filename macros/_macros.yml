@@ -20,3 +20,122 @@ macros:
         type: relation
         description: >
           Relation returned by `source()`, for example `source('raw', 'customers')`.
+
+  # Data Vault loading patterns (macros/datavault/)
+
+  - name: hash_key
+    description: >
+      Returns the SQL expression of a hub or link hash key. When every key column is NULL it is
+      the all-zeros ghost key (`ghost_hk()`), so a missing business key (such as the customer of
+      an anonymous order) points at the hub's ghost record. Otherwise it is
+      `dbt_utils.generate_surrogate_key()` over the columns, including keys where only some
+      columns are NULL. Hashdiffs use `generate_surrogate_key()` directly.
+    arguments:
+      - name: key_columns
+        type: list
+        description: Business key columns, in alphabetical order, for example `['city', 'country']`.
+
+  - name: ghost_hk
+    description: >
+      Returns the all-zeros hash key literal `'00000000000000000000000000000000'` of the Data
+      Vault ghost record. It is the hash key of the ghost row in every hub, and the parent key
+      and hashdiff of the ghost row in every satellite. Links have no ghost row.
+
+  - name: ghost_load_dts
+    description: >
+      Returns the `load_dts` of the ghost record, `1900-01-01 00:00:00` as `timestamp_ntz`, so it
+      sorts before every real load.
+
+  - name: ghost_source
+    description: Returns the `record_source` of the ghost record, `'SYSTEM'`.
+
+  - name: hub
+    description: >
+      Body of an insert-only hub model. Unions the hash key, business keys and `record_source`
+      of one or more staging models, adds the ghost record, keeps one row per hash key (the
+      ghost record first, then the first model in `src_models`) and, on incremental runs,
+      inserts only keys not yet in the hub.
+      New rows are stamped with `load_dts()`. Output columns: hash key, business keys,
+      `load_dts`, `record_source`.
+    arguments:
+      - name: hk
+        type: string
+        description: Hash key column, for example `'customer_hk'`.
+      - name: bk_columns
+        type: list
+        description: Business key columns, for example `['city', 'country']`.
+      - name: src_models
+        type: list
+        description: >
+          Names of the staging models that feed the hub, in priority order. Each one must expose
+          `hk`, every column of `bk_columns` and `record_source`.
+
+  - name: link
+    description: >
+      Body of an insert-only link model. Unions the link hash key, the hub hash keys and
+      `record_source` of one or more staging models, keeps one row per link key (the first
+      model in `src_models` wins) and, on incremental runs, inserts only keys not yet in the
+      link. New rows are stamped with `load_dts()`. Output columns: link hash key, hub hash
+      keys, `load_dts`, `record_source`.
+    arguments:
+      - name: link_hk
+        type: string
+        description: Link hash key column, for example `'truck_franchise_hk'`.
+      - name: fk_columns
+        type: list
+        description: Hash keys of the participating hubs, for example `['truck_hk', 'franchise_hk']`.
+      - name: src_models
+        type: list
+        description: >
+          Names of the staging models that feed the link, in priority order. Each one must expose
+          `link_hk`, every column of `fk_columns` and `record_source`.
+
+  - name: sat
+    description: >
+      Body of an insert-only satellite model. Takes the distinct parent key, hashdiff, payload
+      and `record_source` of one staging model and adds the ghost record (all-zeros key and
+      hashdiff, NULL payload). On incremental runs it
+      inserts a row only when the parent key is new or its hashdiff differs from the latest row
+      of that key in the satellite. New rows are stamped with `load_dts()`. Output columns:
+      parent hash key, `load_dts`, hashdiff, payload, `record_source`.
+    arguments:
+      - name: parent_hk
+        type: string
+        description: Hash key of the parent hub or link, for example `'customer_hk'`.
+      - name: hashdiff
+        type: string
+        description: Hashdiff column of the payload, for example `'customer_pii_hashdiff'`.
+      - name: payload_columns
+        type: list
+        description: Descriptive columns stored in the satellite, in output order.
+      - name: src_model
+        type: string
+        description: Name of the staging model that feeds the satellite.
+
+  - name: eff_sat
+    description: >
+      Body of an insert-only effectivity satellite on a link with a driving key. Each staged row
+      is the current relationship of its driving key. On incremental runs it inserts
+      `is_active = true` for link keys that are new or were inactive, and `is_active = false` for
+      active link keys whose driving key arrives with a different link key. A driving key that
+      is missing from the batch keeps its current relationship. New rows are stamped with
+      `load_dts()`. Output columns: link hash key, `load_dts`, `is_active`, `record_source`.
+    arguments:
+      - name: link_hk
+        type: string
+        description: Link hash key column, for example `'customer_city_hk'`.
+      - name: driving_key
+        type: string
+        description: >
+          Hub hash key that drives the relationship (has one current link row at a time), for
+          example `'customer_hk'`.
+      - name: link_model
+        type: string
+        description: >
+          Name of the link model, used to look up the driving key of link keys already in the
+          satellite. It must expose `link_hk` and `driving_key`.
+      - name: src_model
+        type: string
+        description: >
+          Name of the staging model that feeds the satellite. It must expose `link_hk`,
+          `driving_key` and `record_source`.

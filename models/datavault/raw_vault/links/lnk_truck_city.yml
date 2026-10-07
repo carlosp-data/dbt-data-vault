@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: lnk_truck_city
+    description: >
+      Link between a truck and its primary city, one row per (truck, city) pair ever seen.
+      Grain: `truck_city_hk` (primary key). A change of primary city adds a new pair;
+      `esat_truck_city` tells which pair is current. Loaded from `stg_raw__trucks`. Insert-only,
+      built with the `link` macro.
+    columns:
+      - name: truck_city_hk
+        description: Link hash key of (`city`, `country`, `truck_id`).
+        data_tests:
+          - unique
+          - not_null
+      - name: truck_hk
+        description: Hash key of the truck. Driving key of `esat_truck_city`.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_truck')
+                field: truck_hk
+      - name: city_hk
+        description: Hash key of the city.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_city')
+                field: city_hk
+      - name: load_dts
+        description: Load timestamp of the batch that first saw the pair.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table of the first row loaded for the pair.
+        data_tests:
+          - not_null

@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: sat_customer_profile
+    description: >
+      Non-PII profile of loyalty customers (demographics and preferences). One row per customer
+      and change. Grain: (`customer_hk`, `load_dts`). A row is inserted when a customer is new
+      or `customer_profile_hashdiff` differs from the customer's latest row. Coded values
+      ('Undisclosed', '5+') are kept as in the source. Loaded from
+      `stg_raw__customers`. Insert-only, built with the `sat` macro. Includes the ghost record (NULL payload).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['customer_hk', 'load_dts']
+    columns:
+      - name: customer_hk
+        description: Hash key of the parent customer. All zeros for the ghost record.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_customer')
+                field: customer_hk
+      - name: load_dts
+        description: Load timestamp of the batch that inserted this version. 1900-01-01 for the ghost record.
+        data_tests:
+          - not_null
+      - name: customer_profile_hashdiff
+        description: Hashdiff over the payload columns. All zeros for the ghost record.
+        data_tests:
+          - not_null
+      - name: cust_gender
+        description: Self-reported gender ('Female', 'Male' or 'Undisclosed').
+      - name: cust_language
+        description: Preferred language.
+      - name: cust_fav_brand
+        description: Truck brand the customer marked as favourite.
+      - name: cust_marital_status
+        description: Self-reported marital status. The source spells 'Divorced/Seperated' this way.
+      - name: cust_children_nr
+        description: Number of children as text ('0' to '4', '5+' or 'Undisclosed').
+      - name: cust_sign_up_date
+        description: Date the customer joined the loyalty program.
+      - name: record_source
+        description: Source table of this version. 'SYSTEM' for the ghost record.
+        data_tests:
+          - not_null

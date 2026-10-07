@@ -30,9 +30,9 @@ renamed as (
 final as (
 
     select
-        {{ dbt_utils.generate_surrogate_key(['product_id']) }} as product_hk,
-        {{ dbt_utils.generate_surrogate_key(['menu_type_id']) }} as menu_type_hk,
-        {{ dbt_utils.generate_surrogate_key(['menu_type_id', 'product_id']) }} as product_menu_type_hk,
+        {{ hash_key(['product_id']) }} as product_hk,
+        {{ hash_key(['menu_type_id']) }} as menu_type_hk,
+        {{ hash_key(['menu_type_id', 'product_id']) }} as product_menu_type_hk,
         product_id,
         menu_product_id,
         menu_type_id,
@@ -66,7 +66,7 @@ final as (
         {{ dbt_utils.generate_surrogate_key([
             'menu_type',
             'truck_brand_name'
-        ]) }} as menu_type_hashdiff,
+        ]) }} as menu_type_details_hashdiff,
         {{ record_source(source('raw', 'products')) }} as record_source
     from renamed
 

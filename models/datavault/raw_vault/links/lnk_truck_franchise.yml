@@ -1,0 +1,63 @@
+version: 2
+
+models:
+  - name: lnk_truck_franchise
+    description: >
+      Link between a truck and the franchise that operates it, one row per (truck, franchise)
+      pair ever seen. Grain: `truck_franchise_hk` (primary key). Company-operated trucks link to
+      franchise 1. If a truck is reassigned, the new pair is added and the old one stays.
+      Loaded from `stg_raw__trucks`. Insert-only, built with the `link` macro.
+    columns:
+      - name: truck_franchise_hk
+        description: Link hash key of (`franchise_id`, `truck_id`).
+        data_tests:
+          - unique
+          - not_null
+      - name: truck_hk
+        description: Hash key of the truck.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_truck')
+                field: truck_hk
+      - name: franchise_hk
+        description: Hash key of the franchise.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_franchise')
+                field: franchise_hk
+      - name: load_dts
+        description: Load timestamp of the batch that first saw the pair.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table of the first row loaded for the pair.
+        data_tests:
+          - not_null
+
+unit_tests:
+  - name: lnk_truck_franchise_incremental_adds_reassignment
+    description: >
+      A truck moved to another franchise adds a new link row. Pairs already in the link are
+      not inserted again.
+    model: lnk_truck_franchise
+    overrides:
+      vars:
+        load_dts: '2026-01-01 00:00:00'
+      macros:
+        is_incremental: true
+    given:
+      - input: this
+        rows:
+          - {truck_franchise_hk: 'hk_t1_f1', truck_hk: 'hk_t1', franchise_hk: 'hk_f1', load_dts: '2025-01-01 00:00:00', record_source: 'tasty_bytes.source.trucks'}
+          - {truck_franchise_hk: 'hk_t2_f1', truck_hk: 'hk_t2', franchise_hk: 'hk_f1', load_dts: '2025-01-01 00:00:00', record_source: 'tasty_bytes.source.trucks'}
+      - input: ref('stg_raw__trucks')
+        rows:
+          - {truck_franchise_hk: 'hk_t1_f2', truck_hk: 'hk_t1', franchise_hk: 'hk_f2', record_source: 'tasty_bytes.source.trucks'}
+          - {truck_franchise_hk: 'hk_t2_f1', truck_hk: 'hk_t2', franchise_hk: 'hk_f1', record_source: 'tasty_bytes.source.trucks'}
+    expect:
+      rows:
+        - {truck_franchise_hk: 'hk_t1_f2', truck_hk: 'hk_t1', franchise_hk: 'hk_f2', load_dts: '2026-01-01 00:00:00', record_source: 'tasty_bytes.source.trucks'}

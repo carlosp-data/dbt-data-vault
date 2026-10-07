@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: hub_location
+    description: >
+      Hub of selling locations, one row per location. Grain: `location_hk` (primary key), the
+      hash of the business key `location_id`. Loaded from `stg_raw__locations`. The alternative
+      identifier `placekey` stays in `sat_location_details`. Includes the ghost record.
+      Insert-only, built with the `hub` macro.
+    columns:
+      - name: location_hk
+        description: Hash key of `location_id`. All zeros for the ghost record, the key `hash_key()` returns for a NULL business key.
+        data_tests:
+          - unique
+          - not_null
+      - name: location_id
+        description: Business key of the location. NULL for the ghost record.
+        data_tests:
+          - unique
+          - not_null:
+              config:
+                where: "record_source != 'SYSTEM'"
+      - name: load_dts
+        description: Load timestamp of the batch that first saw the location. 1900-01-01 for the ghost record.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table of the first row loaded for the location. 'SYSTEM' for the ghost record.
+        data_tests:
+          - not_null

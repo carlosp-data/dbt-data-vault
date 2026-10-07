@@ -1,0 +1,58 @@
+version: 2
+
+models:
+  - name: sat_menu_type_details
+    description: >
+      Descriptive attributes of menu types: cuisine and truck brand name. One row per menu type
+      and change. Grain: (`menu_type_hk`, `load_dts`). The staging model repeats each menu type
+      once per product (6 products per menu type, all with the same values), and the `sat`
+      macro loads the distinct rows. Loaded from
+      `stg_raw__products`. Insert-only, built with the `sat` macro. Includes the ghost record (NULL payload).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['menu_type_hk', 'load_dts']
+    columns:
+      - name: menu_type_hk
+        description: Hash key of the parent menu type. All zeros for the ghost record.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_menu_type')
+                field: menu_type_hk
+      - name: load_dts
+        description: Load timestamp of the batch that inserted this version. 1900-01-01 for the ghost record.
+        data_tests:
+          - not_null
+      - name: menu_type_details_hashdiff
+        description: Hashdiff over `menu_type` and `truck_brand_name`. All zeros for the ghost record.
+        data_tests:
+          - not_null
+      - name: menu_type
+        description: Cuisine of the menu type, for example "Ice Cream".
+      - name: truck_brand_name
+        description: Brand name of the trucks selling this menu type, for example "Freezing Point".
+      - name: record_source
+        description: Source table of this version. 'SYSTEM' for the ghost record.
+        data_tests:
+          - not_null
+
+unit_tests:
+  - name: sat_menu_type_details_first_load_dedups_and_adds_ghost
+    description: >
+      A menu type repeated on several staged products loads one row, and the ghost record (NULL
+      payload) is added on the first load.
+    model: sat_menu_type_details
+    overrides:
+      vars:
+        load_dts: '2026-01-01 00:00:00'
+    given:
+      - input: ref('stg_raw__products')
+        rows:
+          - {menu_type_hk: 'hk_mt1', menu_type_details_hashdiff: 'hd_mt1', menu_type: 'Ice Cream', truck_brand_name: 'Freezing Point', record_source: 'tasty_bytes.source.products'}
+          - {menu_type_hk: 'hk_mt1', menu_type_details_hashdiff: 'hd_mt1', menu_type: 'Ice Cream', truck_brand_name: 'Freezing Point', record_source: 'tasty_bytes.source.products'}
+    expect:
+      rows:
+        - {menu_type_hk: '00000000000000000000000000000000', load_dts: '1900-01-01 00:00:00', menu_type_details_hashdiff: '00000000000000000000000000000000', menu_type: null, truck_brand_name: null, record_source: 'SYSTEM'}
+        - {menu_type_hk: 'hk_mt1', load_dts: '2026-01-01 00:00:00', menu_type_details_hashdiff: 'hd_mt1', menu_type: 'Ice Cream', truck_brand_name: 'Freezing Point', record_source: 'tasty_bytes.source.products'}

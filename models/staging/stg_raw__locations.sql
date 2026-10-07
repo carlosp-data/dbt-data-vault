@@ -22,9 +22,9 @@ renamed as (
 final as (
 
     select
-        {{ dbt_utils.generate_surrogate_key(['location_id']) }} as location_hk,
-        {{ dbt_utils.generate_surrogate_key(['city', 'country']) }} as city_hk,
-        {{ dbt_utils.generate_surrogate_key(['city', 'country', 'location_id']) }} as location_city_hk,
+        {{ hash_key(['location_id']) }} as location_hk,
+        {{ hash_key(['city', 'country']) }} as city_hk,
+        {{ hash_key(['city', 'country', 'location_id']) }} as location_city_hk,
         location_id,
         city,
         country,
@@ -37,7 +37,7 @@ final as (
             'location_name',
             'location_region',
             'placekey'
-        ]) }} as location_hashdiff,
+        ]) }} as location_details_hashdiff,
         {{ record_source(source('raw', 'locations')) }} as record_source
     from renamed
 

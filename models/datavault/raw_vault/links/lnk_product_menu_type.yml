@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: lnk_product_menu_type
+    description: >
+      Link between a product (menu item) and the menu type (brand) whose menu lists it, one row
+      per (product, menu type) pair ever seen. Grain: `product_menu_type_hk` (primary key).
+      Loaded from `stg_raw__products`. Insert-only, built with the `link` macro.
+    columns:
+      - name: product_menu_type_hk
+        description: Link hash key of (`menu_type_id`, `product_id`).
+        data_tests:
+          - unique
+          - not_null
+      - name: product_hk
+        description: Hash key of the product.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_product')
+                field: product_hk
+      - name: menu_type_hk
+        description: Hash key of the menu type.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_menu_type')
+                field: menu_type_hk
+      - name: load_dts
+        description: Load timestamp of the batch that first saw the pair.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table of the first row loaded for the pair.
+        data_tests:
+          - not_null

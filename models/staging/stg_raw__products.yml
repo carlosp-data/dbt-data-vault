@@ -83,7 +83,7 @@ models:
         description: Hashdiff over `cost_of_goods_usd` and `sale_price_usd`.
         data_tests:
           - not_null
-      - name: menu_type_hashdiff
+      - name: menu_type_details_hashdiff
         description: Hashdiff over `menu_type` and `truck_brand_name`.
         data_tests:
           - not_null

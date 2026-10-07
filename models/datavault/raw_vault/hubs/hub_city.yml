@@ -1,0 +1,107 @@
+version: 2
+
+models:
+  - name: hub_city
+    description: >
+      Hub of cities, one row per city. Grain: `city_hk` (primary key), the hash of the business
+      key (`city`, `country`). The city concept is shared by customers (residence), franchises,
+      locations and trucks (primary city), so all four staging models load it; when a new city
+      arrives from several of them in one batch, the row comes from the first in this order:
+      locations, trucks, franchises, customers. The raw vault keeps source spellings, so London
+      and Manchester appear twice: with country 'England' (franchises, locations, trucks) and
+      'United Kingdom' (customers). Includes the ghost record. Insert-only, built with the `hub`
+      macro.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['city', 'country']
+    columns:
+      - name: city_hk
+        description: Hash key of (`city`, `country`). All zeros for the ghost record, the key `hash_key()` returns for a NULL business key.
+        data_tests:
+          - unique
+          - not_null
+      - name: city
+        description: City name, part of the business key. NULL for the ghost record.
+        data_tests:
+          - not_null:
+              config:
+                where: "record_source != 'SYSTEM'"
+      - name: country
+        description: Country name, part of the business key. NULL for the ghost record.
+        data_tests:
+          - not_null:
+              config:
+                where: "record_source != 'SYSTEM'"
+      - name: load_dts
+        description: Load timestamp of the batch that first saw the city. 1900-01-01 for the ghost record.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table of the first row loaded for the city. 'SYSTEM' for the ghost record.
+        data_tests:
+          - not_null
+
+unit_tests:
+  - name: hub_city_first_load_dedups_sources_and_adds_ghost
+    description: >
+      A city staged by several models loads once, from the highest-priority model. The ghost
+      record is added on the first load with the all-zeros key that `hash_key()` returns for a NULL
+      (`city`, `country`), and it wins over a staged row with that NULL key.
+    model: hub_city
+    overrides:
+      vars:
+        load_dts: '2026-01-01 00:00:00'
+    given:
+      - input: ref('stg_raw__locations')
+        rows:
+          - {city_hk: 'hk_paris', city: 'Paris', country: 'France', record_source: 'tasty_bytes.source.locations'}
+          # NULL business key, hashed by staging to the ghost key
+          - {city_hk: '00000000000000000000000000000000', city: null, country: null, record_source: 'tasty_bytes.source.locations'}
+      - input: ref('stg_raw__trucks')
+        rows:
+          - {city_hk: 'hk_paris', city: 'Paris', country: 'France', record_source: 'tasty_bytes.source.trucks'}
+          - {city_hk: 'hk_berlin', city: 'Berlin', country: 'Germany', record_source: 'tasty_bytes.source.trucks'}
+      - input: ref('stg_raw__franchises')
+        rows:
+          - {city_hk: 'hk_berlin', city: 'Berlin', country: 'Germany', record_source: 'tasty_bytes.source.franchises'}
+      - input: ref('stg_raw__customers')
+        rows:
+          - {city_hk: 'hk_paris', city: 'Paris', country: 'France', record_source: 'tasty_bytes.source.customers'}
+    expect:
+      rows:
+        - {city_hk: '00000000000000000000000000000000', city: null, country: null, load_dts: '1900-01-01 00:00:00', record_source: 'SYSTEM'}
+        - {city_hk: 'hk_paris', city: 'Paris', country: 'France', load_dts: '2026-01-01 00:00:00', record_source: 'tasty_bytes.source.locations'}
+        - {city_hk: 'hk_berlin', city: 'Berlin', country: 'Germany', load_dts: '2026-01-01 00:00:00', record_source: 'tasty_bytes.source.trucks'}
+
+  - name: hub_city_incremental_inserts_only_new_keys
+    description: >
+      On an incremental run, keys already in the hub (including the ghost record) are skipped
+      and only new cities are inserted.
+    model: hub_city
+    overrides:
+      vars:
+        load_dts: '2026-01-01 00:00:00'
+      macros:
+        is_incremental: true
+    given:
+      - input: this
+        rows:
+          - {city_hk: '00000000000000000000000000000000', city: null, country: null, load_dts: '1900-01-01 00:00:00', record_source: 'SYSTEM'}
+          - {city_hk: 'hk_paris', city: 'Paris', country: 'France', load_dts: '2025-01-01 00:00:00', record_source: 'tasty_bytes.source.locations'}
+      - input: ref('stg_raw__locations')
+        rows:
+          - {city_hk: 'hk_paris', city: 'Paris', country: 'France', record_source: 'tasty_bytes.source.locations'}
+          - {city_hk: 'hk_berlin', city: 'Berlin', country: 'Germany', record_source: 'tasty_bytes.source.locations'}
+      - input: ref('stg_raw__trucks')
+        rows:
+          - {city_hk: 'hk_paris', city: 'Paris', country: 'France', record_source: 'tasty_bytes.source.trucks'}
+      - input: ref('stg_raw__franchises')
+        rows:
+          - {city_hk: 'hk_paris', city: 'Paris', country: 'France', record_source: 'tasty_bytes.source.franchises'}
+      - input: ref('stg_raw__customers')
+        rows:
+          - {city_hk: 'hk_paris', city: 'Paris', country: 'France', record_source: 'tasty_bytes.source.customers'}
+    expect:
+      rows:
+        - {city_hk: 'hk_berlin', city: 'Berlin', country: 'Germany', load_dts: '2026-01-01 00:00:00', record_source: 'tasty_bytes.source.locations'}

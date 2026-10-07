@@ -1,0 +1,106 @@
+version: 2
+
+models:
+  - name: stg_raw__trucks
+    description: >
+      Food trucks, one row per truck.
+      Grain: `truck_id` (primary key). Each truck belongs to one franchise and sells one menu
+      type (brand). Company-operated trucks (`is_franchise = false`) belong to franchise 1.
+      The primary city and country are the business key of `hub_city`, so a change of primary
+      city shows up as a new `truck_city_hk` instead of a new `truck_hashdiff`.
+      Feeds `hub_truck`, `hub_city`, the truck ↔ franchise, truck ↔ menu type and truck ↔ city
+      links (the last one with `esat_truck_city`), and `sat_truck_details`.
+    columns:
+      - name: truck_hk
+        description: Hash key of the truck business key (`truck_id`).
+        data_tests:
+          - unique
+          - not_null
+      - name: franchise_hk
+        description: Hash key of the owning franchise (`franchise_id`).
+        data_tests:
+          - not_null
+      - name: menu_type_hk
+        description: Hash key of the menu type sold by the truck (`menu_type_id`).
+        data_tests:
+          - not_null
+      - name: city_hk
+        description: >
+          Hash key of the city business key (`city`, `country`). The city concept is shared with
+          customers, franchises and locations and lives in its own hub.
+        data_tests:
+          - not_null
+      - name: truck_franchise_hk
+        description: Link hash key of (`franchise_id`, `truck_id`).
+        data_tests:
+          - unique
+          - not_null
+      - name: truck_menu_type_hk
+        description: Link hash key of (`menu_type_id`, `truck_id`).
+        data_tests:
+          - unique
+          - not_null
+      - name: truck_city_hk
+        description: Link hash key of (`city`, `country`, `truck_id`).
+        data_tests:
+          - unique
+          - not_null
+      - name: truck_id
+        description: Business key of the truck.
+        data_tests:
+          - unique
+          - not_null
+      - name: menu_type_id
+        description: Menu type (brand) sold by the truck.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_raw__products')
+                field: menu_type_id
+      - name: franchise_id
+        description: Franchise that operates the truck.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_raw__franchises')
+                field: franchise_id
+      - name: city
+        description: City where the truck usually operates (`primary_city` in the source). Part of the `hub_city` business key.
+        data_tests:
+          - not_null
+      - name: country
+        description: Country where the truck operates. Part of the `hub_city` business key.
+        data_tests:
+          - not_null
+      - name: truck_region
+        description: Region, state or province where the truck operates.
+      - name: truck_region_code
+        description: ISO 3166-2 code of the region.
+      - name: truck_country_code
+        description: ISO 3166-1 alpha-2 country code.
+      - name: is_franchise
+        description: True when a franchise operates the truck, false when Tasty Bytes does.
+        data_tests:
+          - not_null
+      - name: is_ev
+        description: True for electric vehicles.
+        data_tests:
+          - not_null
+      - name: truck_make
+        description: Vehicle manufacturer.
+      - name: truck_model
+        description: Vehicle model.
+      - name: truck_model_year
+        description: Model year of the vehicle.
+      - name: truck_opening_date
+        description: Date the truck started operating.
+      - name: truck_hashdiff
+        description: Hashdiff over the descriptive attributes of the truck, excluding city and country (tracked by the truck ↔ city link).
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table the row comes from.
+        data_tests:
+          - not_null

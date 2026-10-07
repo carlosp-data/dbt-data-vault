@@ -13,14 +13,14 @@ clean-targets:
   - "target"
 
 seeds:
-  # Builds seeds into '<your_schema_name>_raw'
+  # Builds seeds as tables in '<your_schema_name>_stg'
   tasty_bytes:
     +schema: stg
 
 models:
   tasty_bytes:
     +static_analysis: strict
-    # Materialize staging models as views, and marts as tables
+    # schema and materialization for each component
     staging:
       +schema: stg
       +materialized: view

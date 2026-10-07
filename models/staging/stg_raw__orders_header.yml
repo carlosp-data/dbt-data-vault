@@ -1,0 +1,102 @@
+version: 2
+
+models:
+  - name: stg_raw__orders_header
+    description: >
+      Orders placed at Tasty Bytes trucks, one row per order (about 248 million rows, from
+      2019-01-01 to 2022-11-01). Grain: `order_id` (primary key).
+      Every order is in USD and `order_amount` always equals `order_total`, since tax and
+      discounts are never recorded. About 95% of orders have no `customer_id` because they
+      come from customers outside the loyalty program. Each `shift_id` belongs to exactly one
+      truck and has one start and end time.
+      Feeds `hub_order`, `hub_shift`, the order ↔ truck ↔ location ↔ customer ↔ shift link,
+      `sat_order_details` and `sat_shift_details`.
+    columns:
+      - name: order_hk
+        description: Hash key of the order business key (`order_id`).
+        data_tests:
+          - not_null
+      - name: truck_hk
+        description: Hash key of the truck that took the order.
+        data_tests:
+          - not_null
+      - name: location_hk
+        description: Hash key of the location where the order was placed.
+        data_tests:
+          - not_null
+      - name: customer_hk
+        description: >
+          Hash key of the loyalty customer. When `customer_id` is NULL it is the hash of the
+          `dbt_utils` NULL placeholder, so it is never NULL itself.
+        data_tests:
+          - not_null
+      - name: shift_hk
+        description: Hash key of the truck shift.
+        data_tests:
+          - not_null
+      - name: order_truck_location_customer_shift_hk
+        description: Link hash key of (`customer_id`, `location_id`, `order_id`, `shift_id`, `truck_id`).
+        data_tests:
+          - not_null
+      - name: order_id
+        description: Business key of the order.
+        data_tests:
+          - unique
+          - not_null
+      - name: truck_id
+        description: Truck that took the order.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_raw__trucks')
+                field: truck_id
+      - name: location_id
+        description: Location where the order was placed. Stored as FLOAT in the source and cast to integer.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_raw__locations')
+                field: location_id
+      - name: customer_id
+        description: Loyalty customer who placed the order. NULL for customers outside the loyalty program.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_raw__customers')
+                field: customer_id
+      - name: shift_id
+        description: Truck shift during which the order was placed.
+        data_tests:
+          - not_null
+      - name: shift_start_time
+        description: Local start time of the shift.
+      - name: shift_end_time
+        description: Local end time of the shift.
+      - name: order_ts
+        description: Local timestamp of the order (no time zone).
+        data_tests:
+          - not_null
+      - name: order_currency
+        description: Currency of the order amounts.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['USD']
+      - name: order_amount
+        description: Order amount. Always equal to `order_total`.
+      - name: order_total
+        description: Total amount of the order (sum of its line amounts).
+        data_tests:
+          - not_null
+      - name: order_hashdiff
+        description: Hashdiff over the order attributes (amounts, currency, timestamp).
+        data_tests:
+          - not_null
+      - name: shift_hashdiff
+        description: Hashdiff over the shift start and end times.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table the row comes from.

@@ -1,0 +1,59 @@
+version: 2
+
+models:
+  - name: stg_raw__franchises
+    description: >
+      Franchises that operate Tasty Bytes food trucks, one row per franchise.
+      Grain: `franchise_id` (primary key). Franchise 1 is Tasty Bytes itself and owns every
+      company-operated truck. In the source, `franchise_id` is not unique: 5 ids are exact
+      duplicates and 5 more (36, 37, 49, 81, 123) appear twice with different cities. The
+      model keeps one deterministic row per id (first city in alphabetical order).
+      City and country are the business key of `hub_city`, so the only satellite payload left
+      is the franchisee's PII.
+      Feeds `hub_franchise`, `hub_city`, `lnk_franchise_city` and `sat_franchise_pii`.
+    columns:
+      - name: franchise_hk
+        description: Hash key of the franchise business key (`franchise_id`).
+        data_tests:
+          - unique
+          - not_null
+      - name: city_hk
+        description: >
+          Hash key of the city business key (`city`, `country`). The city concept is shared with
+          customers, locations and trucks and lives in its own hub.
+        data_tests:
+          - not_null
+      - name: franchise_city_hk
+        description: Link hash key of (`city`, `country`, `franchise_id`).
+        data_tests:
+          - unique
+          - not_null
+      - name: franchise_id
+        description: Business key of the franchise.
+        data_tests:
+          - unique
+          - not_null
+      - name: city
+        description: City where the franchise is based. Part of the `hub_city` business key.
+        data_tests:
+          - not_null
+      - name: country
+        description: Country where the franchise is based. Part of the `hub_city` business key.
+        data_tests:
+          - not_null
+      - name: franchise_first_name
+        description: First name of the franchisee (PII).
+      - name: franchise_last_name
+        description: Last name of the franchisee (PII).
+      - name: franchise_email
+        description: Email address of the franchisee (PII).
+      - name: franchise_phone
+        description: Phone number of the franchisee (PII).
+      - name: franchise_pii_hashdiff
+        description: Hashdiff over the PII attributes (email, names, phone).
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table the row comes from.
+        data_tests:
+          - not_null

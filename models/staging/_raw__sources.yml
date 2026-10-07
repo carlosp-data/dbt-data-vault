@@ -1,0 +1,22 @@
+version: 2
+
+# Try using these source definitions instead!
+sources:
+  - name: raw
+    schema: source
+    description: Source data downloaded from s3://sfquickstarts/tasty-bytes-builder-education/
+    tables:
+      - name: franchises
+        description: Master data for the franchise companies that operate Tasty Bytes food trucks.
+      - name: locations
+        description: Locations where Tasty Bytes food trucks operate, including geographic and regional information.
+      - name: products
+        description: Menu items offered by Tasty Bytes trucks, including product names, categories, and prices.
+      - name: trucks
+        description: Food truck master data, including truck identifiers, franchise ownership, operating locations, and other truck attributes.
+      - name: customers
+        description: Customer master data containing information about customers who place orders through Tasty Bytes.
+      - name: orders_header
+        description: Order-level information, with one record per order, including the customer, truck, order date and time, and order totals.
+      - name: orders_detail
+        description: Line-item details for each order, with one record per product ordered, including quantities and item-level amounts.

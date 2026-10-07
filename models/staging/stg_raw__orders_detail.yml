@@ -1,0 +1,64 @@
+version: 2
+
+models:
+  - name: stg_raw__orders_detail
+    description: >
+      Order lines, one row per product line of an order (about 674 million rows).
+      Grain: `order_detail_id` (primary key); (`order_id`, `line_number`) is also unique.
+      `line_amount` always equals `quantity * unit_price`. The source column `menu_item_id` is
+      staged as `product_id`.
+      Feeds the order ↔ product order-line link and its satellite.
+    columns:
+      - name: order_hk
+        description: Hash key of the parent order (`order_id`).
+        data_tests:
+          - not_null
+      - name: product_hk
+        description: Hash key of the product sold (`product_id`).
+        data_tests:
+          - not_null
+      - name: order_line_hk
+        description: Link hash key of (`line_number`, `order_id`, `product_id`); `line_number` is the dependent child key.
+        data_tests:
+          - not_null
+      - name: order_detail_id
+        description: Source identifier of the order line.
+        data_tests:
+          - unique
+          - not_null
+      - name: order_id
+        description: Parent order.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_raw__orders_header')
+                field: order_id
+      - name: product_id
+        description: Product (menu item) sold on this line.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_raw__products')
+                field: product_id
+      - name: line_number
+        description: Position of the line within the order.
+        data_tests:
+          - not_null
+      - name: quantity
+        description: Number of units sold.
+        data_tests:
+          - not_null
+      - name: unit_price
+        description: Price of one unit, in the order currency (USD).
+        data_tests:
+          - not_null
+      - name: line_amount
+        description: Line amount (`quantity * unit_price`). Named `price` in the source.
+        data_tests:
+          - not_null
+      - name: order_detail_hashdiff
+        description: Hashdiff over the line attributes (`line_amount`, `order_detail_id`, `quantity`, `unit_price`).
+      - name: record_source
+        description: Source table the row comes from.

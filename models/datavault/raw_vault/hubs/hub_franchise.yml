@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: hub_franchise
+    description: >
+      Hub of franchises, one row per franchise. Grain: `franchise_hk` (primary key), the hash of
+      the business key `franchise_id`. Franchise 1 is Tasty Bytes itself. Loaded from
+      `stg_raw__franchises` and from the franchise reference in `stg_raw__trucks` (franchises
+      win when both carry a new key). Includes the ghost record. Insert-only, built with the
+      `hub` macro.
+    columns:
+      - name: franchise_hk
+        description: Hash key of `franchise_id`. All zeros for the ghost record, the key `hash_key()` returns for a NULL business key.
+        data_tests:
+          - unique
+          - not_null
+      - name: franchise_id
+        description: Business key of the franchise. NULL for the ghost record.
+        data_tests:
+          - unique
+          - not_null:
+              config:
+                where: "record_source != 'SYSTEM'"
+      - name: load_dts
+        description: Load timestamp of the batch that first saw the franchise. 1900-01-01 for the ghost record.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table of the first row loaded for the franchise. 'SYSTEM' for the ghost record.
+        data_tests:
+          - not_null

@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: hub_product
+    description: >
+      Hub of products (menu items), one row per product. Grain: `product_hk` (primary key), the
+      hash of the business key `product_id` (`menu_item_id` in the source). Loaded from
+      `stg_raw__products`. Includes the ghost record. Insert-only, built with the `hub` macro.
+    columns:
+      - name: product_hk
+        description: Hash key of `product_id`. All zeros for the ghost record, the key `hash_key()` returns for a NULL business key.
+        data_tests:
+          - unique
+          - not_null
+      - name: product_id
+        description: Business key of the product. NULL for the ghost record.
+        data_tests:
+          - unique
+          - not_null:
+              config:
+                where: "record_source != 'SYSTEM'"
+      - name: load_dts
+        description: Load timestamp of the batch that first saw the product. 1900-01-01 for the ghost record.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table of the first row loaded for the product. 'SYSTEM' for the ghost record.
+        data_tests:
+          - not_null

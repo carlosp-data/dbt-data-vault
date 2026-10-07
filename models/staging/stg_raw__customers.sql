@@ -31,9 +31,9 @@ renamed as (
 final as (
 
     select
-        {{ dbt_utils.generate_surrogate_key(['customer_id']) }} as customer_hk,
-        {{ dbt_utils.generate_surrogate_key(['city', 'country']) }} as city_hk,
-        {{ dbt_utils.generate_surrogate_key(['city', 'country', 'customer_id']) }} as customer_city_hk,
+        {{ hash_key(['customer_id']) }} as customer_hk,
+        {{ hash_key(['city', 'country']) }} as city_hk,
+        {{ hash_key(['city', 'country', 'customer_id']) }} as customer_city_hk,
         customer_id,
         city,
         country,

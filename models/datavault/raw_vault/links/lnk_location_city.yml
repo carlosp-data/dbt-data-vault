@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: lnk_location_city
+    description: >
+      Link between a selling location and its city, one row per (location, city) pair ever
+      seen. Grain: `location_city_hk` (primary key). There is no effectivity satellite on this
+      link. Loaded from `stg_raw__locations`. Insert-only, built with the `link` macro.
+    columns:
+      - name: location_city_hk
+        description: Link hash key of (`city`, `country`, `location_id`).
+        data_tests:
+          - unique
+          - not_null
+      - name: location_hk
+        description: Hash key of the location.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_location')
+                field: location_hk
+      - name: city_hk
+        description: Hash key of the city.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_city')
+                field: city_hk
+      - name: load_dts
+        description: Load timestamp of the batch that first saw the pair.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table of the first row loaded for the pair.
+        data_tests:
+          - not_null

@@ -26,8 +26,8 @@ models:
           - not_null
       - name: customer_hk
         description: >
-          Hash key of the loyalty customer. When `customer_id` is NULL it is the hash of the
-          `dbt_utils` NULL placeholder, so it is never NULL itself.
+          Hash key of the loyalty customer. When `customer_id` is NULL (anonymous order) it is
+          the all-zeros key of the ghost customer in `hub_customer`, so it is never NULL itself.
         data_tests:
           - not_null
       - name: shift_hk
@@ -100,3 +100,20 @@ models:
           - not_null
       - name: record_source
         description: Source table the row comes from.
+
+unit_tests:
+  - name: stg_raw__orders_header_null_customer_gets_ghost_key
+    description: >
+      `hash_key()` turns the NULL `customer_id` of an anonymous order into the all-zeros ghost
+      key, while a member's id is hashed normally. The order link key is hashed normally in both
+      cases, because only some of its key columns are NULL.
+    model: stg_raw__orders_header
+    given:
+      - input: source('raw', 'orders_header')
+        rows:
+          - {order_id: 1, truck_id: 4, location_id: 2, customer_id: null, shift_id: 3}
+          - {order_id: 5, truck_id: 4, location_id: 2, customer_id: 42, shift_id: 3}
+    expect:
+      rows:
+        - {order_id: 1, customer_hk: '00000000000000000000000000000000', order_truck_location_customer_shift_hk: '50535eb6f2d959551c0a07cff72fd01e'}
+        - {order_id: 5, customer_hk: 'a1d0c6e83f027327d8461063f4ac58a6', order_truck_location_customer_shift_hk: '58671c0e37a7b263e1f3c91b36b2cf2a'}

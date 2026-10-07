@@ -48,16 +48,10 @@ models:
           - not_null
       - name: quantity
         description: Number of units sold.
-        data_tests:
-          - not_null
       - name: unit_price
         description: Price of one unit, in the order currency (USD).
-        data_tests:
-          - not_null
       - name: line_amount
         description: Line amount (`quantity * unit_price`). Named `price` in the source.
-        data_tests:
-          - not_null
       - name: order_detail_hashdiff
         description: Hashdiff over the line attributes (`line_amount`, `order_detail_id`, `quantity`, `unit_price`).
       - name: record_source

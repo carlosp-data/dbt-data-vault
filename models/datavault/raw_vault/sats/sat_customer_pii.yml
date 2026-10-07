@@ -1,0 +1,48 @@
+version: 2
+
+models:
+  - name: sat_customer_pii
+    description: >
+      Personal data (PII) of loyalty customers, kept apart from the profile so access can be
+      restricted. One row per customer and change. Grain: (`customer_hk`, `load_dts`). A row is
+      inserted when a customer is new or `customer_pii_hashdiff` differs from the customer's
+      latest row. City and country are not here (see `lnk_customer_city`).
+      Loaded from `stg_raw__customers`. Insert-only, built with the `sat` macro.
+      Includes the ghost record (NULL payload).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['customer_hk', 'load_dts']
+    columns:
+      - name: customer_hk
+        description: Hash key of the parent customer. All zeros for the ghost record.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_customer')
+                field: customer_hk
+      - name: load_dts
+        description: Load timestamp of the batch that inserted this version. 1900-01-01 for the ghost record.
+        data_tests:
+          - not_null
+      - name: customer_pii_hashdiff
+        description: Hashdiff over the payload columns. All zeros for the ghost record.
+        data_tests:
+          - not_null
+      - name: cust_first_name
+        description: First name (PII).
+      - name: cust_last_name
+        description: Last name (PII).
+      - name: cust_email
+        description: Email address (PII).
+      - name: cust_phone
+        description: Phone number (PII).
+      - name: cust_birth_date
+        description: Date of birth (PII).
+      - name: cust_zipcode
+        description: Postal code of the customer's address (PII).
+      - name: record_source
+        description: Source table of this version. 'SYSTEM' for the ghost record.
+        data_tests:
+          - not_null

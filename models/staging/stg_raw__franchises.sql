@@ -32,9 +32,9 @@ renamed as (
 final as (
 
     select
-        {{ dbt_utils.generate_surrogate_key(['franchise_id']) }} as franchise_hk,
-        {{ dbt_utils.generate_surrogate_key(['city', 'country']) }} as city_hk,
-        {{ dbt_utils.generate_surrogate_key(['city', 'country', 'franchise_id']) }} as franchise_city_hk,
+        {{ hash_key(['franchise_id']) }} as franchise_hk,
+        {{ hash_key(['city', 'country']) }} as city_hk,
+        {{ hash_key(['city', 'country', 'franchise_id']) }} as franchise_city_hk,
         franchise_id,
         city,
         country,

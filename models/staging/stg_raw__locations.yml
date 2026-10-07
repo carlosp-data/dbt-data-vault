@@ -48,7 +48,7 @@ models:
         description: Region, state or province of the location.
       - name: location_country_code
         description: ISO 3166-1 alpha-2 country code.
-      - name: location_hashdiff
+      - name: location_details_hashdiff
         description: Hashdiff over the descriptive attributes (country code, name, region, placekey).
         data_tests:
           - not_null

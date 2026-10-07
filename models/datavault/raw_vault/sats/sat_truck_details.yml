@@ -1,0 +1,53 @@
+version: 2
+
+models:
+  - name: sat_truck_details
+    description: >
+      Descriptive attributes of food trucks: vehicle, region codes, ownership and EV flags. One
+      row per truck and change. Grain: (`truck_hk`, `load_dts`). The primary city is in
+      `lnk_truck_city`, the franchise in `lnk_truck_franchise` and the brand in
+      `lnk_truck_menu_type`. Loaded from `stg_raw__trucks`.
+      Insert-only, built with the `sat` macro. Includes the ghost record (NULL payload).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['truck_hk', 'load_dts']
+    columns:
+      - name: truck_hk
+        description: Hash key of the parent truck. All zeros for the ghost record.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_truck')
+                field: truck_hk
+      - name: load_dts
+        description: Load timestamp of the batch that inserted this version. 1900-01-01 for the ghost record.
+        data_tests:
+          - not_null
+      - name: truck_details_hashdiff
+        description: Hashdiff over the payload columns. All zeros for the ghost record.
+        data_tests:
+          - not_null
+      - name: truck_region
+        description: Region, state or province where the truck operates.
+      - name: truck_region_code
+        description: ISO 3166-2 code of the region.
+      - name: truck_country_code
+        description: ISO 3166-1 alpha-2 country code.
+      - name: is_franchise
+        description: True when a franchise operates the truck, false when Tasty Bytes does.
+      - name: is_ev
+        description: True for electric vehicles.
+      - name: truck_make
+        description: Vehicle manufacturer.
+      - name: truck_model
+        description: Vehicle model.
+      - name: truck_model_year
+        description: Model year of the vehicle.
+      - name: truck_opening_date
+        description: Date the truck started operating.
+      - name: record_source
+        description: Source table of this version. 'SYSTEM' for the ghost record.
+        data_tests:
+          - not_null

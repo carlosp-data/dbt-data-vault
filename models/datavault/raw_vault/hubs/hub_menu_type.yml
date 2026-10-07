@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: hub_menu_type
+    description: >
+      Hub of menu types (truck brands / cuisines), one row per menu type. Grain: `menu_type_hk`
+      (primary key), the hash of the business key `menu_type_id`. Loaded from
+      `stg_raw__products` and from the menu type reference in `stg_raw__trucks` (products win
+      when both carry a new key). Includes the ghost record. Insert-only, built with the `hub`
+      macro.
+    columns:
+      - name: menu_type_hk
+        description: Hash key of `menu_type_id`. All zeros for the ghost record, the key `hash_key()` returns for a NULL business key.
+        data_tests:
+          - unique
+          - not_null
+      - name: menu_type_id
+        description: Business key of the menu type. NULL for the ghost record.
+        data_tests:
+          - unique
+          - not_null:
+              config:
+                where: "record_source != 'SYSTEM'"
+      - name: load_dts
+        description: Load timestamp of the batch that first saw the menu type. 1900-01-01 for the ghost record.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table of the first row loaded for the menu type. 'SYSTEM' for the ghost record.
+        data_tests:
+          - not_null

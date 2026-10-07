@@ -1,0 +1,37 @@
+version: 2
+
+models:
+  - name: esat_customer_city
+    description: >
+      Effectivity satellite on `lnk_customer_city`, driven by the customer: it records when a
+      customer ↔ city pair becomes active or inactive. When a customer moves, the load inserts
+      the new pair as active and the old pair as inactive. The latest row of each pair gives its
+      current status, and a customer has at most one active pair. Grain:
+      (`customer_city_hk`, `load_dts`). A customer missing from a load keeps its current city.
+      No ghost record (links and their effectivity satellites have none).
+      Loaded from `stg_raw__customers`. Insert-only, built with the `eff_sat` macro.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['customer_city_hk', 'load_dts']
+    columns:
+      - name: customer_city_hk
+        description: Hash key of the parent link row (customer ↔ city pair).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('lnk_customer_city')
+                field: customer_city_hk
+      - name: load_dts
+        description: Load timestamp of the batch that recorded the status change.
+        data_tests:
+          - not_null
+      - name: is_active
+        description: True from this load on when the pair is the customer's current city, false when it stopped being current.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table that reported the status change.
+        data_tests:
+          - not_null

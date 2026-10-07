@@ -1,0 +1,78 @@
+version: 2
+
+models:
+  - name: esat_truck_city
+    description: >
+      Effectivity satellite on `lnk_truck_city`, driven by the truck: it records when a
+      truck ↔ primary city pair becomes active or inactive. When a truck changes its primary
+      city, the load inserts the new pair as active and the old pair as inactive. The latest row
+      of each pair gives its current status, and a truck has at most one active pair. Grain:
+      (`truck_city_hk`, `load_dts`). A truck missing from a load keeps its current city. No
+      ghost record (links and their effectivity satellites have none).
+      Loaded from `stg_raw__trucks`. Insert-only, built with the `eff_sat` macro.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['truck_city_hk', 'load_dts']
+    columns:
+      - name: truck_city_hk
+        description: Hash key of the parent link row (truck ↔ city pair).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('lnk_truck_city')
+                field: truck_city_hk
+      - name: load_dts
+        description: Load timestamp of the batch that recorded the status change.
+        data_tests:
+          - not_null
+      - name: is_active
+        description: True from this load on when the pair is the truck's current primary city, false when it stopped being current.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table that reported the status change.
+        data_tests:
+          - not_null
+
+unit_tests:
+  - name: esat_truck_city_incremental_tracks_moves
+    description: >
+      Truck 1 moves to a new city: the new pair opens and the old one closes. Truck 2 is
+      unchanged: nothing is inserted. Truck 3 returns to an earlier city: the old pair reopens
+      and the current one closes. Truck 4 is missing from the batch: its pair stays active.
+    model: esat_truck_city
+    overrides:
+      vars:
+        load_dts: '2026-01-01 00:00:00'
+      macros:
+        is_incremental: true
+    given:
+      - input: ref('lnk_truck_city')
+        rows:
+          - {truck_city_hk: 'hk_t1_c1', truck_hk: 'hk_t1', city_hk: 'hk_c1'}
+          - {truck_city_hk: 'hk_t1_c2', truck_hk: 'hk_t1', city_hk: 'hk_c2'}
+          - {truck_city_hk: 'hk_t2_c1', truck_hk: 'hk_t2', city_hk: 'hk_c1'}
+          - {truck_city_hk: 'hk_t3_c1', truck_hk: 'hk_t3', city_hk: 'hk_c1'}
+          - {truck_city_hk: 'hk_t3_c2', truck_hk: 'hk_t3', city_hk: 'hk_c2'}
+          - {truck_city_hk: 'hk_t4_c1', truck_hk: 'hk_t4', city_hk: 'hk_c1'}
+      - input: this
+        rows:
+          - {truck_city_hk: 'hk_t1_c1', load_dts: '2025-01-01 00:00:00', is_active: true, record_source: 'tasty_bytes.source.trucks'}
+          - {truck_city_hk: 'hk_t2_c1', load_dts: '2025-01-01 00:00:00', is_active: true, record_source: 'tasty_bytes.source.trucks'}
+          - {truck_city_hk: 'hk_t3_c1', load_dts: '2025-01-01 00:00:00', is_active: true, record_source: 'tasty_bytes.source.trucks'}
+          - {truck_city_hk: 'hk_t3_c1', load_dts: '2025-06-01 00:00:00', is_active: false, record_source: 'tasty_bytes.source.trucks'}
+          - {truck_city_hk: 'hk_t3_c2', load_dts: '2025-06-01 00:00:00', is_active: true, record_source: 'tasty_bytes.source.trucks'}
+          - {truck_city_hk: 'hk_t4_c1', load_dts: '2025-01-01 00:00:00', is_active: true, record_source: 'tasty_bytes.source.trucks'}
+      - input: ref('stg_raw__trucks')
+        rows:
+          - {truck_city_hk: 'hk_t1_c2', truck_hk: 'hk_t1', record_source: 'tasty_bytes.source.trucks'}
+          - {truck_city_hk: 'hk_t2_c1', truck_hk: 'hk_t2', record_source: 'tasty_bytes.source.trucks'}
+          - {truck_city_hk: 'hk_t3_c1', truck_hk: 'hk_t3', record_source: 'tasty_bytes.source.trucks'}
+    expect:
+      rows:
+        - {truck_city_hk: 'hk_t1_c2', load_dts: '2026-01-01 00:00:00', is_active: true, record_source: 'tasty_bytes.source.trucks'}
+        - {truck_city_hk: 'hk_t1_c1', load_dts: '2026-01-01 00:00:00', is_active: false, record_source: 'tasty_bytes.source.trucks'}
+        - {truck_city_hk: 'hk_t3_c1', load_dts: '2026-01-01 00:00:00', is_active: true, record_source: 'tasty_bytes.source.trucks'}
+        - {truck_city_hk: 'hk_t3_c2', load_dts: '2026-01-01 00:00:00', is_active: false, record_source: 'tasty_bytes.source.trucks'}

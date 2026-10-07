@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: hub_customer
+    description: >
+      Hub of loyalty-program customers, one row per customer. Grain: `customer_hk` (primary key),
+      the hash of the business key `customer_id`. Loaded from `stg_raw__customers`. Includes the
+      ghost record, the target of anonymous (non-member) orders: a NULL `customer_id`
+      hashes to the ghost key. Insert-only, built with the
+      `hub` macro.
+    columns:
+      - name: customer_hk
+        description: Hash key of `customer_id`. All zeros for the ghost record, the key `hash_key()` returns for a NULL business key.
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: Business key of the loyalty member. NULL for the ghost record.
+        data_tests:
+          - unique
+          - not_null:
+              config:
+                where: "record_source != 'SYSTEM'"
+      - name: load_dts
+        description: Load timestamp of the batch that first saw the customer. 1900-01-01 for the ghost record.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table of the first row loaded for the customer. 'SYSTEM' for the ghost record.
+        data_tests:
+          - not_null

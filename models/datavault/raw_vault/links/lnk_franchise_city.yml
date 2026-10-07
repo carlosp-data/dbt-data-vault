@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: lnk_franchise_city
+    description: >
+      Link between a franchise and the city where it is based, one row per (franchise, city)
+      pair ever seen. Grain: `franchise_city_hk` (primary key). Staging keeps one city per
+      franchise (see `stg_raw__franchises`). There is no effectivity satellite on this link.
+      Loaded from `stg_raw__franchises`. Insert-only, built with the `link` macro.
+    columns:
+      - name: franchise_city_hk
+        description: Link hash key of (`city`, `country`, `franchise_id`).
+        data_tests:
+          - unique
+          - not_null
+      - name: franchise_hk
+        description: Hash key of the franchise.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_franchise')
+                field: franchise_hk
+      - name: city_hk
+        description: Hash key of the city.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_city')
+                field: city_hk
+      - name: load_dts
+        description: Load timestamp of the batch that first saw the pair.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table of the first row loaded for the pair.
+        data_tests:
+          - not_null

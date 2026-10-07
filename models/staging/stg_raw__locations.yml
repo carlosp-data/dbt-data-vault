@@ -1,0 +1,58 @@
+version: 2
+
+models:
+  - name: stg_raw__locations
+    description: >
+      Places where Tasty Bytes trucks sell, one row per location.
+      Grain: `location_id` (primary key). `placekey` is also unique and identifies the same
+      place globally. City and country are the business key of `hub_city`. A city spans several
+      regions, so `location_region` stays a location attribute.
+      Feeds `hub_location`, `hub_city`, `lnk_location_city` and `sat_location_details`.
+    columns:
+      - name: location_hk
+        description: Hash key of the location business key (`location_id`).
+        data_tests:
+          - unique
+          - not_null
+      - name: city_hk
+        description: >
+          Hash key of the city business key (`city`, `country`). The city concept is shared with
+          customers, franchises and trucks and lives in its own hub.
+        data_tests:
+          - not_null
+      - name: location_city_hk
+        description: Link hash key of (`city`, `country`, `location_id`).
+        data_tests:
+          - unique
+          - not_null
+      - name: location_id
+        description: Business key of the location.
+        data_tests:
+          - unique
+          - not_null
+      - name: city
+        description: City of the location. Part of the `hub_city` business key.
+        data_tests:
+          - not_null
+      - name: country
+        description: Country name of the location. Part of the `hub_city` business key.
+        data_tests:
+          - not_null
+      - name: placekey
+        description: Placekey (global point-of-interest identifier) of the location.
+        data_tests:
+          - unique
+      - name: location_name
+        description: Name of the location (venue, street or landmark).
+      - name: location_region
+        description: Region, state or province of the location.
+      - name: location_country_code
+        description: ISO 3166-1 alpha-2 country code.
+      - name: location_hashdiff
+        description: Hashdiff over the descriptive attributes (country code, name, region, placekey).
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table the row comes from.
+        data_tests:
+          - not_null

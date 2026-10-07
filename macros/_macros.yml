@@ -1,0 +1,22 @@
+version: 2
+
+macros:
+  - name: load_dts
+    description: >
+      Returns a `timestamp_ntz` literal used as the Data Vault `load_dts` of the rows a vault
+      model inserts. It is the start time (UTC) of the current dbt invocation, unless the
+      `load_dts` project var is set (format `YYYY-MM-DD HH24:MI:SS[.FF]`) to simulate a specific
+      load. It is called by the vault models, never by staging: staging views stay free of load
+      metadata, so every vault model in one run gets the same value, whichever models are
+      selected.
+
+  - name: record_source
+    description: >
+      Returns the Data Vault `record_source` as a string literal, such as
+      `'tasty_bytes.source.customers'`. The name comes from the relation returned by `source()`
+      with any identifier quotes removed, so the lineage is never written by hand.
+    arguments:
+      - name: source_relation
+        type: relation
+        description: >
+          Relation returned by `source()`, for example `source('raw', 'customers')`.

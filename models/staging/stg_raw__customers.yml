@@ -1,0 +1,99 @@
+version: 2
+
+models:
+  - name: stg_raw__customers
+    description: >
+      Members of the Tasty Bytes loyalty program, one row per customer.
+      Grain: `customer_id` (primary key). PII and profile attributes are hashed separately so
+      they can load into different satellites. Coded values ('Undisclosed', '5+') are kept as
+      in the source and decoded downstream. City and country are not satellite attributes:
+      they are the business key of `hub_city`, which other entities share, so a change of
+      residence shows up as a new `customer_city_hk` instead of a new profile hashdiff.
+      Feeds `hub_customer`, `hub_city`, `lnk_customer_city` (with `esat_customer_city`),
+      `sat_customer_pii` and `sat_customer_profile`.
+    columns:
+      - name: customer_hk
+        description: Hash key of the customer business key (`customer_id`).
+        data_tests:
+          - unique
+          - not_null
+      - name: city_hk
+        description: >
+          Hash key of the city business key (`city`, `country`). The city concept is shared with
+          franchises, locations and trucks and lives in its own hub.
+        data_tests:
+          - not_null
+      - name: customer_city_hk
+        description: Link hash key of (`city`, `country`, `customer_id`).
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: Business key of the loyalty member.
+        data_tests:
+          - unique
+          - not_null
+      - name: city
+        description: City of residence. Part of the `hub_city` business key.
+        data_tests:
+          - not_null
+      - name: country
+        description: >
+          Country of residence. Part of the `hub_city` business key. The source says
+          'United Kingdom' where franchises, locations and trucks say 'England'.
+        data_tests:
+          - not_null
+      - name: cust_first_name
+        description: First name (PII).
+      - name: cust_last_name
+        description: Last name (PII).
+      - name: cust_email
+        description: Email address (PII).
+      - name: cust_phone
+        description: Phone number (PII).
+      - name: cust_birth_date
+        description: Date of birth (PII).
+      - name: cust_zipcode
+        description: Postal code of the customer's address (PII).
+      - name: cust_gender
+        description: Self-reported gender.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Female', 'Male', 'Undisclosed']
+      - name: cust_language
+        description: Preferred language.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Arabic', 'English', 'French', 'German', 'Hindi', 'Japanese', 'Korean', 'Polish', 'Portuguese', 'Spanish', 'Swedish']
+      - name: cust_fav_brand
+        description: Truck brand the customer marked as favourite.
+      - name: cust_marital_status
+        description: Self-reported marital status. The source spells 'Divorced/Seperated' this way.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Divorced/Seperated', 'Married', 'Single', 'Undisclosed']
+      - name: cust_children_nr
+        description: Number of children as text ('0' to '4', '5+' or 'Undisclosed').
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['0', '1', '2', '3', '4', '5+', 'Undisclosed']
+      - name: cust_sign_up_date
+        description: Date the customer joined the loyalty program.
+      - name: customer_pii_hashdiff
+        description: Hashdiff over the PII attributes (birth date, email, names, phone, postal code).
+        data_tests:
+          - not_null
+      - name: customer_profile_hashdiff
+        description: >
+          Hashdiff over the non-PII profile attributes. It excludes city and country, whose
+          changes are tracked by the customer ↔ city link.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table the row comes from.
+        data_tests:
+          - not_null

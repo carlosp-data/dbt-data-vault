@@ -1,0 +1,93 @@
+version: 2
+
+models:
+  - name: stg_raw__products
+    description: >
+      Products (menu items) sold by Tasty Bytes trucks, one row per product. The source table is
+      called `products` but holds the menu; its `menu_item_*` columns are staged as `product_*`.
+      Grain: `product_id` (primary key). Each product belongs to one menu type (truck brand);
+      there are 15 menu types. Health metrics are flattened from the
+      `menu_item_health_metrics_obj` VARIANT, whose array always holds one element.
+      Feeds `hub_product`, `hub_menu_type`, the product ↔ menu type link,
+      `sat_product_details`, `sat_product_pricing` and `sat_menu_type_details`.
+    columns:
+      - name: product_hk
+        description: Hash key of the product business key (`product_id`).
+        data_tests:
+          - unique
+          - not_null
+      - name: menu_type_hk
+        description: Hash key of the menu type business key (`menu_type_id`). Not unique here; one menu type has many products.
+        data_tests:
+          - not_null
+      - name: product_menu_type_hk
+        description: Link hash key of (`menu_type_id`, `product_id`).
+        data_tests:
+          - unique
+          - not_null
+      - name: product_id
+        description: Business key of the product. Named `menu_item_id` in the source.
+        data_tests:
+          - unique
+          - not_null
+      - name: menu_product_id
+        description: Source identifier of the menu row (`menu_id`). Unique, one-to-one with `product_id`.
+        data_tests:
+          - unique
+          - not_null
+      - name: menu_type_id
+        description: Business key of the menu type (truck brand / cuisine).
+        data_tests:
+          - not_null
+      - name: menu_type
+        description: Cuisine of the menu type, for example "Ice Cream".
+      - name: truck_brand_name
+        description: Brand name of the trucks selling this menu type, for example "Freezing Point".
+      - name: product_name
+        description: Name of the product. Named `menu_item_name` in the source.
+      - name: product_category
+        description: Category of the product. Named `item_category` in the source.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Beverage', 'Dessert', 'Main', 'Snack']
+      - name: product_subcategory
+        description: Serving temperature of the product. Named `item_subcategory` in the source.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['Cold Option', 'Hot Option', 'Warm Option']
+      - name: cost_of_goods_usd
+        description: Cost of goods of one unit, in USD.
+        data_tests:
+          - not_null
+      - name: sale_price_usd
+        description: List sale price of one unit, in USD.
+        data_tests:
+          - not_null
+      - name: is_healthy
+        description: True when the product is flagged as healthy.
+      - name: is_dairy_free
+        description: True when the product is dairy-free.
+      - name: is_gluten_free
+        description: True when the product is gluten-free.
+      - name: is_nut_free
+        description: True when the product is nut-free.
+      - name: ingredients
+        description: Array of ingredient names.
+      - name: product_details_hashdiff
+        description: Hashdiff over the descriptive attributes of the product (names, category, health metrics, ingredients).
+        data_tests:
+          - not_null
+      - name: product_pricing_hashdiff
+        description: Hashdiff over `cost_of_goods_usd` and `sale_price_usd`.
+        data_tests:
+          - not_null
+      - name: menu_type_hashdiff
+        description: Hashdiff over `menu_type` and `truck_brand_name`.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table the row comes from.
+        data_tests:
+          - not_null

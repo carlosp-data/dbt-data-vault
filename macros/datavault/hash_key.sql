@@ -11,6 +11,7 @@
     Hashdiffs keep using `dbt_utils.generate_surrogate_key()` directly.
 -#}
 {% macro hash_key(key_columns) -%}
+    {%- set key_columns = key_columns | sort -%}
     case
         when {% for col in key_columns %}{{ col }} is null{% if not loop.last %} and {% endif %}{% endfor %}
             then {{ ghost_hk() }}

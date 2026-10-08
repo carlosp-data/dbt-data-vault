@@ -7,13 +7,25 @@
     When a new key arrives from more than one model in the same batch, the row (and its
     `record_source`) comes from the first model in `src_models`.
 
+    A link can carry dependent child keys: business columns that are part of the link hash key
+    but have no hub of their own, such as the `line_number` of an order line.
+
         {{ link(
             link_hk='truck_franchise_hk',
             fk_columns=['truck_hk', 'franchise_hk'],
             src_models=['stg_raw__trucks']
         ) }}
+
+        {{ link(
+            link_hk='order_line_hk',
+            fk_columns=['order_hk', 'product_hk'],
+            src_models=['stg_raw__orders_detail'],
+            child_key_columns=['line_number']
+        ) }}
 -#}
-{% macro link(link_hk, fk_columns, src_models) -%}
+{% macro link(link_hk, fk_columns, src_models, child_key_columns=[]) -%}
+
+{%- set columns = fk_columns + child_key_columns -%}
 
 with
 
@@ -22,8 +34,8 @@ staged as (
 
     select
         {{ link_hk }},
-        {%- for fk in fk_columns %}
-        {{ fk }},
+        {%- for col in columns %}
+        {{ col }},
         {%- endfor %}
         {{ load_dts() }} as load_dts,
         record_source,
@@ -41,8 +53,8 @@ deduplicated as (
 
     select
         {{ link_hk }},
-        {%- for fk in fk_columns %}
-        {{ fk }},
+        {%- for col in columns %}
+        {{ col }},
         {%- endfor %}
         load_dts,
         record_source
@@ -55,8 +67,8 @@ final as (
 
     select
         deduplicated.{{ link_hk }},
-        {%- for fk in fk_columns %}
-        deduplicated.{{ fk }},
+        {%- for col in columns %}
+        deduplicated.{{ col }},
         {%- endfor %}
         deduplicated.load_dts,
         deduplicated.record_source

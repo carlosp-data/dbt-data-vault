@@ -1,0 +1,90 @@
+version: 2
+
+models:
+  - name: lnk_order_line
+    description: >
+      Link of an order with the products it sold, one row per order line (about 674 million).
+      `line_number` is a dependent child key: it is part of the link hash key but has no hub, so
+      an order that sells the same product on two lines gets two link rows. Grain:
+      `order_line_hk` (primary key). The line amounts are in `sat_order_line_details`. Loaded
+      from `stg_raw__orders_detail`. Insert-only, built with the `link` macro on the
+      `compute_big` warehouse.
+    columns:
+      - name: order_line_hk
+        description: Link hash key of (`line_number`, `order_id`, `product_id`).
+        data_tests:
+          - unique:
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+                tags: ['heavy_test']
+          - not_null:
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+      - name: order_hk
+        description: Hash key of the order.
+        data_tests:
+          - not_null:
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+          - relationships:
+              arguments:
+                to: ref('hub_order')
+                field: order_hk
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+                tags: ['heavy_test']
+      - name: product_hk
+        description: Hash key of the product sold.
+        data_tests:
+          - not_null:
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+          - relationships:
+              arguments:
+                to: ref('hub_product')
+                field: product_hk
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+      - name: line_number
+        description: Dependent child key, the position of the line within the order.
+        data_tests:
+          - not_null:
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+      - name: load_dts
+        description: Load timestamp of the batch that first saw the order line.
+        data_tests:
+          - not_null:
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+      - name: record_source
+        description: Source table of the first row loaded for the order line.
+        data_tests:
+          - not_null:
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+
+unit_tests:
+  - name: lnk_order_line_keeps_dependent_child_key
+    description: >
+      The dependent child key is carried into the link. The same product on two lines of one
+      order gives two link rows, and on an incremental run a line already in the link is not
+      inserted again.
+    model: lnk_order_line
+    overrides:
+      vars:
+        load_dts: '2026-01-01 00:00:00'
+      macros:
+        is_incremental: true
+    given:
+      - input: this
+        rows:
+          - {order_line_hk: 'hk_o1_l1', order_hk: 'hk_o1', product_hk: 'hk_p1', line_number: 1, load_dts: '2025-01-01 00:00:00', record_source: 'tasty_bytes.source.orders_detail'}
+      - input: ref('stg_raw__orders_detail')
+        rows:
+          - {order_line_hk: 'hk_o1_l1', order_hk: 'hk_o1', product_hk: 'hk_p1', line_number: 1, record_source: 'tasty_bytes.source.orders_detail'}
+          # same order and product, another line
+          - {order_line_hk: 'hk_o1_l2', order_hk: 'hk_o1', product_hk: 'hk_p1', line_number: 2, record_source: 'tasty_bytes.source.orders_detail'}
+    expect:
+      rows:
+        - {order_line_hk: 'hk_o1_l2', order_hk: 'hk_o1', product_hk: 'hk_p1', line_number: 2, load_dts: '2026-01-01 00:00:00', record_source: 'tasty_bytes.source.orders_detail'}

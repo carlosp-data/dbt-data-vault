@@ -7,9 +7,10 @@ models:
       2019-01-01 to 2022-11-01). Grain: `order_id` (primary key).
       Every order is in USD and `order_amount` always equals `order_total`, since tax and
       discounts are never recorded. About 95% of orders have no `customer_id` because they
-      come from customers outside the loyalty program. Each `shift_id` belongs to exactly one
-      truck and has one start and end time.
-      Feeds `hub_order`, `hub_shift`, the order ↔ truck ↔ location ↔ customer ↔ shift link,
+      come from customers outside the loyalty program. A shift (524,826 in total) is one truck
+      at one location on one date, between a start and an end time: every order of a shift has
+      the same truck, location, date and times, inside the shift window.
+      Feeds `hub_order`, `hub_shift`, `lnk_order_shift_customer`, `lnk_shift_truck_location`,
       `sat_order_details` and `sat_shift_details`.
     columns:
       - name: order_hk
@@ -34,8 +35,14 @@ models:
         description: Hash key of the truck shift.
         data_tests:
           - not_null
-      - name: order_truck_location_customer_shift_hk
-        description: Link hash key of (`customer_id`, `location_id`, `order_id`, `shift_id`, `truck_id`).
+      - name: order_shift_customer_hk
+        description: >
+          Link hash key of (`customer_id`, `order_id`, `shift_id`). Hashed normally for anonymous
+          orders too, since only `customer_id` is NULL.
+        data_tests:
+          - not_null
+      - name: shift_truck_location_hk
+        description: Link hash key of (`location_id`, `shift_id`, `truck_id`). Repeated on every order of the shift.
         data_tests:
           - not_null
       - name: order_id
@@ -70,10 +77,20 @@ models:
         description: Truck shift during which the order was placed.
         data_tests:
           - not_null
+      - name: shift_date
+        description: >
+          Local date of the shift, the date of `order_ts`. The source has no shift date, and every
+          order of a shift falls on the same date (no shift crosses midnight).
+        data_tests:
+          - not_null
       - name: shift_start_time
         description: Local start time of the shift.
       - name: shift_end_time
         description: Local end time of the shift.
+      - name: order_date
+        description: Local date of the order (date of `order_ts`), for date filters such as yesterday's orders.
+        data_tests:
+          - not_null
       - name: order_ts
         description: Local timestamp of the order (no time zone).
         data_tests:
@@ -90,12 +107,12 @@ models:
         description: Total amount of the order (sum of its line amounts).
         data_tests:
           - not_null
-      - name: order_hashdiff
-        description: Hashdiff over the order attributes (amounts, currency, timestamp).
+      - name: order_details_hashdiff
+        description: Hashdiff over the order attributes (amounts, currency, date and timestamp).
         data_tests:
           - not_null
-      - name: shift_hashdiff
-        description: Hashdiff over the shift start and end times.
+      - name: shift_details_hashdiff
+        description: Hashdiff over the shift date, start time and end time.
         data_tests:
           - not_null
       - name: record_source
@@ -106,14 +123,15 @@ unit_tests:
     description: >
       `hash_key()` turns the NULL `customer_id` of an anonymous order into the all-zeros ghost
       key, while a member's id is hashed normally. The order link key is hashed normally in both
-      cases, because only some of its key columns are NULL.
+      cases, because only some of its key columns are NULL. Both orders share the shift link key,
+      and the order and shift dates come from `order_ts`.
     model: stg_raw__orders_header
     given:
       - input: source('raw', 'orders_header')
         rows:
-          - {order_id: 1, truck_id: 4, location_id: 2, customer_id: null, shift_id: 3}
-          - {order_id: 5, truck_id: 4, location_id: 2, customer_id: 42, shift_id: 3}
+          - {order_id: 1, truck_id: 4, location_id: 2, customer_id: null, shift_id: 3, order_ts: '2022-03-01 23:59:00'}
+          - {order_id: 5, truck_id: 4, location_id: 2, customer_id: 42, shift_id: 3, order_ts: '2022-03-01 08:00:00'}
     expect:
       rows:
-        - {order_id: 1, customer_hk: '00000000000000000000000000000000', order_truck_location_customer_shift_hk: '50535eb6f2d959551c0a07cff72fd01e'}
-        - {order_id: 5, customer_hk: 'a1d0c6e83f027327d8461063f4ac58a6', order_truck_location_customer_shift_hk: '58671c0e37a7b263e1f3c91b36b2cf2a'}
+        - {order_id: 1, customer_hk: '00000000000000000000000000000000', order_shift_customer_hk: '8c5dea3eb420141393eb21e74ea9507d', shift_truck_location_hk: '426ce6f8feb7acb896953e90e72870a3', shift_date: '2022-03-01', order_date: '2022-03-01'}
+        - {order_id: 5, customer_hk: 'a1d0c6e83f027327d8461063f4ac58a6', order_shift_customer_hk: 'f8ddc0367f3f8b6e2744a0f5919a81b7', shift_truck_location_hk: '426ce6f8feb7acb896953e90e72870a3', shift_date: '2022-03-01', order_date: '2022-03-01'}

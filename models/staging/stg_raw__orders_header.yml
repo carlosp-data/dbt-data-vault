@@ -9,7 +9,7 @@ models:
       discounts are never recorded. About 95% of orders have no `customer_id` because they
       come from customers outside the loyalty program. Each `shift_id` belongs to exactly one
       truck and has one start and end time.
-      Feeds `hub_order`, `hub_shift`, the order ↔ truck ↔ location ↔ customer ↔ shift link,
+      Feeds `hub_order`, `hub_shift`, `lnk_order_truck_location_customer_shift`,
       `sat_order_details` and `sat_shift_details`.
     columns:
       - name: order_hk
@@ -90,11 +90,11 @@ models:
         description: Total amount of the order (sum of its line amounts).
         data_tests:
           - not_null
-      - name: order_hashdiff
+      - name: order_details_hashdiff
         description: Hashdiff over the order attributes (amounts, currency, timestamp).
         data_tests:
           - not_null
-      - name: shift_hashdiff
+      - name: shift_details_hashdiff
         description: Hashdiff over the shift start and end times.
         data_tests:
           - not_null

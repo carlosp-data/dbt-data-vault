@@ -76,7 +76,7 @@ macros:
       `record_source` of one or more staging models, keeps one row per link key (the first
       model in `src_models` wins) and, on incremental runs, inserts only keys not yet in the
       link. New rows are stamped with `load_dts()`. Output columns: link hash key, hub hash
-      keys, `load_dts`, `record_source`.
+      keys, dependent child keys, `load_dts`, `record_source`.
     arguments:
       - name: link_hk
         type: string
@@ -88,7 +88,12 @@ macros:
         type: list
         description: >
           Names of the staging models that feed the link, in priority order. Each one must expose
-          `link_hk`, every column of `fk_columns` and `record_source`.
+          `link_hk`, every column of `fk_columns` and `child_key_columns`, and `record_source`.
+      - name: child_key_columns
+        type: list
+        description: >
+          Optional dependent child keys: business columns that are part of the link hash key but
+          have no hub, for example `['line_number']` on the order-line link. Defaults to `[]`.
 
   - name: sat
     description: >

@@ -6,8 +6,8 @@ tasty_bytes:
       account: "{{ env_var('SF_ACCOUNT') }}"
       user: "{{ env_var('SF_USER') }}"
       password: "{{ env_var('SF_PASSWORD') }}"
-      warehouse: "{{ env_var('SF_WAREHOUSE') }}"
-      database: tasty_bytes
+      database: "{{ env_var('SF_DATABASE') }}"
+      warehouse: compute_wh
       schema: dev
       role: dev_role
       threads: 16
@@ -16,8 +16,8 @@ tasty_bytes:
       account: "{{ env_var('SF_ACCOUNT') }}"
       user: "{{ env_var('SF_USER') }}"
       password: "{{ env_var('SF_PASSWORD') }}"
-      warehouse: "{{ env_var('SF_WAREHOUSE') }}"
-      database: tasty_bytes
+      database: "{{ env_var('SF_DATABASE') }}"
+      warehouse: compute_prod
       schema: prod
       role: prod_role
       threads: 16

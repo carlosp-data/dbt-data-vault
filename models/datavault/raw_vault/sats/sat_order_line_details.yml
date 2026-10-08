@@ -1,0 +1,57 @@
+version: 2
+
+models:
+  - name: sat_order_line_details
+    description: >
+      Quantity, unit price and amount of order lines, on the link `lnk_order_line`. One row per
+      order line and change. Grain: (`order_line_hk`, `load_dts`). `line_amount` always equals
+      `quantity * unit_price`. Loaded from `stg_raw__orders_detail`. Insert-only, built with the
+      `sat` macro on the `compute_big` warehouse. Includes the ghost record (NULL payload); links
+      have no ghost row, so the ghost record has no parent in `lnk_order_line`.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['order_line_hk', 'load_dts']
+          config:
+            tags: ['heavy_test']
+    columns:
+      - name: order_line_hk
+        description: Hash key of the parent order line (`lnk_order_line`). All zeros for the ghost record.
+        data_tests:
+          - not_null:
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+          - relationships:
+              arguments:
+                to: ref('lnk_order_line')
+                field: order_line_hk
+              config:
+                # the ghost record has no parent: links have no ghost row
+                where: "record_source != 'SYSTEM' AND load_dts >= {{ load_dts() }}"
+                tags: ['heavy_test']
+      - name: load_dts
+        description: Load timestamp of the batch that inserted this version. 1900-01-01 for the ghost record.
+        data_tests:
+          - not_null:
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+      - name: order_line_details_hashdiff
+        description: Hashdiff over `line_amount`, `order_detail_id`, `quantity` and `unit_price`. All zeros for the ghost record.
+        data_tests:
+          - not_null:
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+      - name: order_detail_id
+        description: Source identifier of the order line.
+      - name: quantity
+        description: Number of units sold.
+      - name: unit_price
+        description: Price of one unit, in USD.
+      - name: line_amount
+        description: Line amount (`quantity * unit_price`).
+      - name: record_source
+        description: Source table of this version. 'SYSTEM' for the ghost record.
+        data_tests:
+          - not_null:
+              config:
+                where: "load_dts >= {{ load_dts() }}"

@@ -1,3 +1,8 @@
+{{ config(
+    snowflake_warehouse='compute_big',
+    tags=['large_table']
+) }}
+
 with
 
 source as (
@@ -71,11 +76,11 @@ final as (
             'order_currency',
             'order_total',
             'order_ts'
-        ]) }} as order_hashdiff,
+        ]) }} as order_details_hashdiff,
         {{ dbt_utils.generate_surrogate_key([
             'shift_end_time',
             'shift_start_time'
-        ]) }} as shift_hashdiff,
+        ]) }} as shift_details_hashdiff,
         {{ record_source(source('raw', 'orders_header')) }} as record_source
     from renamed
 

@@ -7,7 +7,8 @@ models:
       Grain: `order_detail_id` (primary key); (`order_id`, `line_number`) is also unique.
       `line_amount` always equals `quantity * unit_price`. The source column `menu_item_id` is
       staged as `product_id`.
-      Feeds the order ↔ product order-line link and its satellite.
+      Feeds `lnk_order_line` (order ↔ product, with `line_number` as dependent child key) and
+      `sat_order_line_details`.
     columns:
       - name: order_hk
         description: Hash key of the parent order (`order_id`).
@@ -52,7 +53,7 @@ models:
         description: Price of one unit, in the order currency (USD).
       - name: line_amount
         description: Line amount (`quantity * unit_price`). Named `price` in the source.
-      - name: order_detail_hashdiff
+      - name: order_line_details_hashdiff
         description: Hashdiff over the line attributes (`line_amount`, `order_detail_id`, `quantity`, `unit_price`).
       - name: record_source
         description: Source table the row comes from.

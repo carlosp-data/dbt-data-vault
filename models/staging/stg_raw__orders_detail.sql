@@ -1,3 +1,8 @@
+{{ config(
+    snowflake_warehouse='compute_big',
+    tags=['large_table']
+) }}
+
 with
 
 source as (
@@ -49,7 +54,7 @@ final as (
             'order_detail_id',
             'quantity',
             'unit_price'
-        ]) }} as order_detail_hashdiff,
+        ]) }} as order_line_details_hashdiff,
         {{ record_source(source('raw', 'orders_detail')) }} as record_source
     from renamed
 

@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: hub_shift
+    description: >
+      Hub of truck shifts, one row per shift. Grain: `shift_hk` (primary key), the hash of the
+      business key `shift_id`. Each shift belongs to exactly one truck; the relationship is kept
+      in `lnk_order_truck_location_customer_shift`. Loaded from `stg_raw__orders_header`, which
+      repeats each shift once per order. Includes the ghost record. Insert-only, built with the
+      `hub` macro on the `compute_big` warehouse.
+    columns:
+      - name: shift_hk
+        description: Hash key of `shift_id`. All zeros for the ghost record, the key `hash_key()` returns for a NULL business key.
+        data_tests:
+          - unique
+          - not_null
+      - name: shift_id
+        description: Business key of the shift. NULL for the ghost record.
+        data_tests:
+          - unique
+          - not_null:
+              config:
+                where: "record_source != 'SYSTEM'"
+      - name: load_dts
+        description: Load timestamp of the batch that first saw the shift. 1900-01-01 for the ghost record.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table of the first row loaded for the shift. 'SYSTEM' for the ghost record.
+        data_tests:
+          - not_null

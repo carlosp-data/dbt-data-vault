@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: sat_shift_details
+    description: >
+      Start and end time of truck shifts. One row per shift and change. Grain: (`shift_hk`,
+      `load_dts`). The staging model repeats each shift once per order, always with the same
+      times, and the `sat` macro loads the distinct rows. Loaded from `stg_raw__orders_header`.
+      Insert-only, built with the `sat` macro on the `compute_big` warehouse. Includes the ghost
+      record (NULL payload).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['shift_hk', 'load_dts']
+    columns:
+      - name: shift_hk
+        description: Hash key of the parent shift. All zeros for the ghost record.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_shift')
+                field: shift_hk
+      - name: load_dts
+        description: Load timestamp of the batch that inserted this version. 1900-01-01 for the ghost record.
+        data_tests:
+          - not_null
+      - name: shift_details_hashdiff
+        description: Hashdiff over `shift_end_time` and `shift_start_time`. All zeros for the ghost record.
+        data_tests:
+          - not_null
+      - name: shift_start_time
+        description: Local start time of the shift.
+      - name: shift_end_time
+        description: Local end time of the shift.
+      - name: record_source
+        description: Source table of this version. 'SYSTEM' for the ghost record.
+        data_tests:
+          - not_null

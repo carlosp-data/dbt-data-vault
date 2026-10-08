@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: hub_order
+    description: >
+      Hub of orders, one row per order (about 248 million). Grain: `order_hk` (primary key), the
+      hash of the business key `order_id`. Loaded from `stg_raw__orders_header`; every order of
+      `stg_raw__orders_detail` is in the header, so the lines are not a second source. Includes
+      the ghost record. Insert-only, built with the `hub` macro on the `compute_big` warehouse.
+    columns:
+      - name: order_hk
+        description: Hash key of `order_id`. All zeros for the ghost record, the key `hash_key()` returns for a NULL business key.
+        data_tests:
+          - unique
+          - not_null
+      - name: order_id
+        description: Business key of the order. NULL for the ghost record.
+        data_tests:
+          - unique
+          - not_null:
+              config:
+                where: "record_source != 'SYSTEM'"
+      - name: load_dts
+        description: Load timestamp of the batch that first saw the order. 1900-01-01 for the ghost record.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table of the first row loaded for the order. 'SYSTEM' for the ghost record.
+        data_tests:
+          - not_null

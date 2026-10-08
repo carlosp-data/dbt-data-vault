@@ -1,0 +1,72 @@
+version: 2
+
+models:
+  - name: lnk_order_shift_customer
+    description: >
+      Link of an order with the shift during which it was placed and the loyalty customer who
+      placed it, one row per order (about 248 million). The order's truck and location are
+      reached through the shift (`lnk_shift_truck_location`). Anonymous orders (about 95%) link
+      to the ghost customer, whose all-zeros key `hash_key()` returns for a NULL `customer_id`,
+      so every order has exactly one row. Grain: `order_shift_customer_hk` (primary key).
+      Loaded from `stg_raw__orders_header`. Insert-only, built with the `link` macro on the
+      `compute_big` warehouse.
+    columns:
+      - name: order_shift_customer_hk
+        description: Link hash key of (`customer_id`, `order_id`, `shift_id`).
+        data_tests:
+          - unique:
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+                tags: ['heavy_test']
+          - not_null:
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+      - name: order_hk
+        description: Hash key of the order.
+        data_tests:
+          - not_null:
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+          - relationships:
+              arguments:
+                to: ref('hub_order')
+                field: order_hk
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+                tags: ['heavy_test']
+      - name: shift_hk
+        description: Hash key of the shift during which the order was placed.
+        data_tests:
+          - not_null:
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+          - relationships:
+              arguments:
+                to: ref('hub_shift')
+                field: shift_hk
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+      - name: customer_hk
+        description: Hash key of the loyalty customer. All zeros (ghost customer) for anonymous orders.
+        data_tests:
+          - not_null:
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+          - relationships:
+              arguments:
+                to: ref('hub_customer')
+                field: customer_hk
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+      - name: load_dts
+        description: Load timestamp of the batch that first saw the order.
+        data_tests:
+          - not_null:
+              config:
+                where: "load_dts >= {{ load_dts() }}"
+      - name: record_source
+        description: Source table of the first row loaded for the order.
+        data_tests:
+          - not_null:
+              config:
+                where: "load_dts >= {{ load_dts() }}"

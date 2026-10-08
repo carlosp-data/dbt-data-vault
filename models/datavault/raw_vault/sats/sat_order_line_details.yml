@@ -13,6 +13,7 @@ models:
           arguments:
             combination_of_columns: ['order_line_hk', 'load_dts']
           config:
+            where: "load_dts >= {{ load_dts() }}"
             tags: ['heavy_test']
     columns:
       - name: order_line_hk

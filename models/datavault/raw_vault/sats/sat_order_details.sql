@@ -7,6 +7,7 @@
     parent_hk='order_hk',
     hashdiff='order_details_hashdiff',
     payload_columns=[
+        'order_date',
         'order_ts',
         'order_currency',
         'order_amount',

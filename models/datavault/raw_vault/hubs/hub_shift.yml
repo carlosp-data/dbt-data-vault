@@ -3,11 +3,12 @@ version: 2
 models:
   - name: hub_shift
     description: >
-      Hub of truck shifts, one row per shift. Grain: `shift_hk` (primary key), the hash of the
-      business key `shift_id`. Each shift belongs to exactly one truck; the relationship is kept
-      in `lnk_order_truck_location_customer_shift`. Loaded from `stg_raw__orders_header`, which
-      repeats each shift once per order. Includes the ghost record. Insert-only, built with the
-      `hub` macro on the `compute_big` warehouse.
+      Hub of truck shifts, one row per shift (524,826). A shift is one truck at one location on
+      one date, between a start and an end time: the truck and location are in
+      `lnk_shift_truck_location`, the date and times in `sat_shift_details`, and orders link to
+      their shift in `lnk_order_shift_customer`. Grain: `shift_hk` (primary key), the hash of
+      the business key `shift_id`. Loaded from `stg_raw__orders_header`, which repeats each
+      shift once per order. Includes the ghost record. Insert-only, built with the `hub` macro.
     columns:
       - name: shift_hk
         description: Hash key of `shift_id`. All zeros for the ghost record, the key `hash_key()` returns for a NULL business key.

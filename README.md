@@ -61,7 +61,8 @@ key: a NULL business key (such as the customer of an anonymous order) hashes to 
 | `lnk_franchise_city` | franchise ↔ city | franchises |
 | `lnk_location_city` | location ↔ city | locations |
 | `lnk_truck_city` | truck ↔ city | trucks |
-| `lnk_order_truck_location_customer_shift` | order ↔ truck ↔ location ↔ customer ↔ shift | orders_header |
+| `lnk_shift_truck_location` | shift ↔ truck ↔ location | orders_header |
+| `lnk_order_shift_customer` | order ↔ shift ↔ customer (ghost customer for anonymous orders) | orders_header |
 | `lnk_order_line` | order ↔ product, with `line_number` as dependent child key | orders_detail |
 
 ### Satellites
@@ -76,13 +77,13 @@ key: a NULL business key (such as the customer of an anonymous order) hashes to 
 | `sat_product_pricing` | `hub_product` | Cost of goods, sale price |
 | `sat_menu_type_details` | `hub_menu_type` | Menu type (cuisine), truck brand name |
 | `sat_truck_details` | `hub_truck` | Region codes, ownership and EV flags, make, model, year, opening date |
-| `sat_order_details` | `hub_order` | Order timestamp, currency, amount, total |
-| `sat_shift_details` | `hub_shift` | Shift start and end time |
+| `sat_order_details` | `hub_order` | Order date and timestamp, currency, amount, total |
+| `sat_shift_details` | `hub_shift` | Shift date, start and end time |
 | `sat_order_line_details` | `lnk_order_line` | Order detail id, quantity, unit price, line amount |
 | `esat_customer_city` | `lnk_customer_city` | Effectivity (`is_active`): the customer's current city |
 | `esat_truck_city` | `lnk_truck_city` | Effectivity (`is_active`): the truck's current primary city |
 
-The order objects run on a larger warehouse (`compute_big`). The business vault (PITs,
+The order tables run on a larger warehouse (`compute_big`). The business vault (PITs,
 bridges, derived satellites) and the marts are not built yet.
 
 # License

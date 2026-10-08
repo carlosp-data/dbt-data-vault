@@ -1,0 +1,50 @@
+version: 2
+
+models:
+  - name: lnk_shift_truck_location
+    description: >
+      Link of a shift with the truck that worked it and the location where it worked: the
+      truck's availability at a place, whose date and time window are in `sat_shift_details`.
+      One row per shift (524,826), since every order of a shift has the same truck and
+      location. A shift never changes truck or location, so there is no effectivity satellite.
+      Grain: `shift_truck_location_hk` (primary key). Loaded from `stg_raw__orders_header`,
+      which repeats each shift once per order. Insert-only, built with the `link` macro.
+    columns:
+      - name: shift_truck_location_hk
+        description: Link hash key of (`location_id`, `shift_id`, `truck_id`).
+        data_tests:
+          - unique
+          - not_null
+      - name: shift_hk
+        description: Hash key of the shift.
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_shift')
+                field: shift_hk
+      - name: truck_hk
+        description: Hash key of the truck that worked the shift.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_truck')
+                field: truck_hk
+      - name: location_hk
+        description: Hash key of the location where the truck worked the shift.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_location')
+                field: location_hk
+      - name: load_dts
+        description: Load timestamp of the batch that first saw the shift.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table of the first row loaded for the shift.
+        data_tests:
+          - not_null

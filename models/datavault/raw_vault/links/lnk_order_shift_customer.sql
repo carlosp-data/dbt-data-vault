@@ -4,7 +4,7 @@
 ) }}
 
 {{ link(
-    link_hk='order_truck_location_customer_shift_hk',
-    fk_columns=['order_hk', 'truck_hk', 'location_hk', 'customer_hk', 'shift_hk'],
+    link_hk='order_shift_customer_hk',
+    fk_columns=['order_hk', 'shift_hk', 'customer_hk'],
     src_models=['stg_raw__orders_header']
 ) }}

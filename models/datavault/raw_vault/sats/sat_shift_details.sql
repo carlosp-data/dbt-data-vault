@@ -3,6 +3,7 @@
     parent_hk='shift_hk',
     hashdiff='shift_details_hashdiff',
     payload_columns=[
+        'shift_date',
         'shift_start_time',
         'shift_end_time'
     ],

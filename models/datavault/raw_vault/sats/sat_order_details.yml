@@ -3,7 +3,7 @@ version: 2
 models:
   - name: sat_order_details
     description: >
-      Order attributes: timestamp, currency and amounts. One row per order and change. Grain:
+      Order attributes: date, timestamp, currency and amounts. One row per order and change. Grain:
       (`order_hk`, `load_dts`). Every order is in USD and `order_amount` always equals
       `order_total`; the raw vault keeps both as delivered. Loaded from `stg_raw__orders_header`.
       Insert-only, built with the `sat` macro on the `compute_big` warehouse. Includes the ghost
@@ -12,6 +12,9 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns: ['order_hk', 'load_dts']
+          config:
+            where: "load_dts >= {{ load_dts() }}"
+            tags: ['heavy_test']
     columns:
       - name: order_hk
         description: Hash key of the parent order. All zeros for the ghost record.
@@ -25,6 +28,7 @@ models:
                 field: order_hk
               config:
                 where: "load_dts >= {{ load_dts() }}"
+                tags: ['heavy_test']
       - name: load_dts
         description: Load timestamp of the batch that inserted this version. 1900-01-01 for the ghost record.
         data_tests:
@@ -32,11 +36,15 @@ models:
               config:
                 where: "load_dts >= {{ load_dts() }}"
       - name: order_details_hashdiff
-        description: Hashdiff over `order_amount`, `order_currency`, `order_total` and `order_ts`. All zeros for the ghost record.
+        description: Hashdiff over `order_amount`, `order_currency`, `order_date`, `order_total` and `order_ts`. All zeros for the ghost record.
         data_tests:
           - not_null:
               config:
                 where: "load_dts >= {{ load_dts() }}"
+      - name: order_date
+        description: >
+          Local date of the order (date of `order_ts`), for date filters such as yesterday's
+          orders. Always equal to the shift date in `sat_shift_details`.
       - name: order_ts
         description: Local timestamp of the order (no time zone).
       - name: order_currency

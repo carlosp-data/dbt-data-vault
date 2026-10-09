@@ -13,8 +13,9 @@ renamed as (
         -- business key of hub_city, shared with customers, franchises and locations
         trim(primary_city) as city,
         trim(country) as country,
-        trim(region) as truck_region,
-        trim(iso_region) as truck_region_code,
+        -- iso_region is not an ISO code but the region name used by locations.region;
+        -- region (a coarser, inconsistent naming) is not staged
+        trim(iso_region) as truck_region,
         -- iso_country_code is not staged: it is an attribute of the city (sat_city_details)
         -- flags are stored as 0/1 numbers in the source
         franchise_flag = 1 as is_franchise,
@@ -43,7 +44,6 @@ final as (
         city,
         country,
         truck_region,
-        truck_region_code,
         is_franchise,
         is_ev,
         truck_make,
@@ -57,8 +57,7 @@ final as (
             'truck_model',
             'truck_model_year',
             'truck_opening_date',
-            'truck_region',
-            'truck_region_code'
+            'truck_region'
         ]) }} as truck_details_hashdiff,
         {{ record_source(source('raw', 'trucks')) }} as record_source
     from renamed

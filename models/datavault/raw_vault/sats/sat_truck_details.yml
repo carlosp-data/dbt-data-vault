@@ -3,7 +3,7 @@ version: 2
 models:
   - name: sat_truck_details
     description: >
-      Descriptive attributes of food trucks: vehicle, region codes, ownership and EV flags. One
+      Descriptive attributes of food trucks: vehicle, region, ownership and EV flags. One
       row per truck and change. Grain: (`truck_hk`, `load_dts`). The primary city is in
       `lnk_truck_city`, the franchise in `lnk_truck_franchise` and the brand in
       `lnk_truck_menu_type`. Loaded from `stg_raw__trucks`.
@@ -30,9 +30,9 @@ models:
         data_tests:
           - not_null
       - name: truck_region
-        description: Region, state or province where the truck operates.
-      - name: truck_region_code
-        description: ISO 3166-2 code of the region.
+        description: >
+          Region, state or province of the truck's primary city (source column `iso_region`),
+          with the same values as `location_region` in `sat_location_details`.
       - name: is_franchise
         description: True when a franchise operates the truck, false when Tasty Bytes does.
       - name: is_ev

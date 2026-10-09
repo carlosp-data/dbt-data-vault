@@ -77,9 +77,13 @@ models:
         data_tests:
           - not_null
       - name: truck_region
-        description: Region, state or province where the truck operates.
-      - name: truck_region_code
-        description: ISO 3166-2 code of the region.
+        description: >
+          Region, state or province of the truck's primary city, from the source column
+          `iso_region`. Despite its name it is not an ISO 3166-2 code: it uses the same values as
+          `stg_raw__locations.location_region` (one of the city's location regions in every
+          city), including state abbreviations such as 'NY' or 'QC' in the US and Canada. The
+          source column `region` is not staged: it names regions differently and is sometimes
+          wrong for the city (Berlin → 'Brandenburg').
       - name: is_franchise
         description: True when a franchise operates the truck, false when Tasty Bytes does.
         data_tests:

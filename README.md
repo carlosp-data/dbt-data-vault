@@ -77,7 +77,7 @@ key: a NULL business key (such as the customer of an anonymous order) hashes to 
 | `sat_product_details` | `hub_product` | Name, category, subcategory, health flags, ingredients |
 | `sat_product_pricing` | `hub_product` | Cost of goods, sale price |
 | `sat_menu_type_details` | `hub_menu_type` | Menu type (cuisine), truck brand name |
-| `sat_truck_details` | `hub_truck` | Region codes, ownership and EV flags, make, model, year, opening date |
+| `sat_truck_details` | `hub_truck` | Region, ownership and EV flags, make, model, year, opening date |
 | `sat_order_details` | `hub_order` | Order date and timestamp, currency, amount, total |
 | `sat_shift_details` | `hub_shift` | Shift date, start and end time |
 | `sat_order_line_details` | `lnk_order_line` | Order detail id, quantity, unit price, line amount |

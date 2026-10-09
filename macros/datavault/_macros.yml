@@ -1,6 +1,9 @@
 version: 2
 
 macros:
+
+  # Data Vault mandatory fields: loading date and record source
+
   - name: load_dts
     description: >
       Returns a `timestamp_ntz` literal used as the Data Vault `load_dts` of the rows a vault
@@ -21,7 +24,7 @@ macros:
         description: >
           Relation returned by `source()`, for example `source('raw', 'customers')`.
 
-  # Data Vault loading patterns (macros/datavault/)
+  # Hash function for key and diff columns
 
   - name: hash_key
     description: >
@@ -35,19 +38,7 @@ macros:
         type: list
         description: Business key columns, in alphabetical order, for example `['city', 'country']`.
 
-  - name: ghost_hk
-    description: >
-      Returns the all-zeros hash key literal `'00000000000000000000000000000000'` of the Data
-      Vault ghost record. It is the hash key of the ghost row in every hub, and the parent key
-      and hashdiff of the ghost row in every satellite. Links have no ghost row.
-
-  - name: ghost_load_dts
-    description: >
-      Returns the `load_dts` of the ghost record, `1900-01-01 00:00:00` as `timestamp_ntz`, so it
-      sorts before every real load.
-
-  - name: ghost_source
-    description: Returns the `record_source` of the ghost record, `'SYSTEM'`.
+  # Data Vault loading patterns for each table type
 
   - name: hub
     description: >
@@ -144,3 +135,19 @@ macros:
         description: >
           Name of the staging model that feeds the satellite. It must expose `link_hk`,
           `driving_key` and `record_source`.
+
+  # Ghost records to ensure inner-join among tables (even for missing keys)
+
+  - name: ghost_hk
+    description: >
+      Returns the all-zeros hash key literal `'00000000000000000000000000000000'` of the Data
+      Vault ghost record. It is the hash key of the ghost row in every hub, and the parent key
+      and hashdiff of the ghost row in every satellite. Links have no ghost row.
+
+  - name: ghost_load_dts
+    description: >
+      Returns the `load_dts` of the ghost record, `1900-01-01 00:00:00` as `timestamp_ntz`, so it
+      sorts before every real load.
+
+  - name: ghost_source
+    description: Returns the `record_source` of the ghost record, `'SYSTEM'`.

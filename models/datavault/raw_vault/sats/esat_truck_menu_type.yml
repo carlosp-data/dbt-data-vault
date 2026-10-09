@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: esat_truck_menu_type
+    description: >
+      Effectivity satellite on `lnk_truck_menu_type`, driven by the truck: it records when a
+      truck ↔ menu type (brand) pair becomes active or inactive. When a truck is rebranded, the
+      load inserts the new pair as active and the old pair as inactive. The latest row of each
+      pair gives its current status, and a truck has at most one active pair. A rebrand is
+      independent of a transfer (`esat_truck_franchise`). Grain: (`truck_menu_type_hk`,
+      `load_dts`). A truck missing from a load keeps its current brand. No ghost record (links
+      and their effectivity satellites have none). Loaded from `stg_raw__trucks`. Insert-only,
+      built with the `eff_sat` macro.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['truck_menu_type_hk', 'load_dts']
+    columns:
+      - name: truck_menu_type_hk
+        description: Hash key of the parent link row (truck ↔ menu type pair).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('lnk_truck_menu_type')
+                field: truck_menu_type_hk
+      - name: load_dts
+        description: Load timestamp of the batch that recorded the status change.
+        data_tests:
+          - not_null
+      - name: is_active
+        description: True from this load on when the pair is the brand the truck currently sells, false when it stopped being current.
+        data_tests:
+          - not_null
+      - name: record_source
+        description: Source table that reported the status change.
+        data_tests:
+          - not_null

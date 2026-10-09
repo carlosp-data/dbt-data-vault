@@ -11,7 +11,8 @@ models:
       source's ISO country code is not staged: it always matches the city's code in `locations`,
       the reference source for `sat_city_details`.
       Feeds `hub_truck`, `hub_city`, the truck ↔ franchise, truck ↔ menu type and truck ↔ city
-      links (the last one with `esat_truck_city`), and `sat_truck_details`.
+      links with their effectivity satellites (`esat_truck_franchise`, `esat_truck_menu_type`,
+      `esat_truck_city`), and `sat_truck_details`.
     columns:
       - name: truck_hk
         description: Hash key of the truck business key (`truck_id`).

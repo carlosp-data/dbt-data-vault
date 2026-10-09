@@ -7,10 +7,14 @@ models:
       Grain: `franchise_id` (primary key). Franchise 1 is Tasty Bytes itself and owns every
       company-operated truck. In the source, `franchise_id` is not unique: 5 ids are exact
       duplicates and 5 more (36, 37, 49, 81, 123) appear twice with different cities. The
-      model keeps one deterministic row per id (first city in alphabetical order).
+      model keeps one deterministic row per id (first city in alphabetical order). Each of those 5
+      franchises runs exactly two trucks, one in each of its two cities, so the kept city matches
+      only one of them. For every other franchisee the city is the primary city of all its
+      trucks; franchise 1 (the company) has trucks in 30 cities.
       City and country are the business key of `hub_city`, so the only satellite payload left
       is the franchisee's PII.
-      Feeds `hub_franchise`, `hub_city`, `lnk_franchise_city` and `sat_franchise_pii`.
+      Feeds `hub_franchise`, `hub_city`, `lnk_franchise_city` (with `esat_franchise_city`) and
+      `sat_franchise_pii`.
     columns:
       - name: franchise_hk
         description: Hash key of the franchise business key (`franchise_id`).

@@ -5,7 +5,8 @@ models:
     description: >
       Link between a truck and the franchise that operates it, one row per (truck, franchise)
       pair ever seen. Grain: `truck_franchise_hk` (primary key). Company-operated trucks link to
-      franchise 1. If a truck is reassigned, the new pair is added and the old one stays.
+      franchise 1. If a truck is reassigned, the new pair is added and the old one stays; the current
+      franchise is the active pair in `esat_truck_franchise`.
       Loaded from `stg_raw__trucks`. Insert-only, built with the `link` macro.
     columns:
       - name: truck_franchise_hk

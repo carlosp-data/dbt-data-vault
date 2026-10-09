@@ -83,6 +83,9 @@ key: a NULL business key (such as the customer of an anonymous order) hashes to 
 | `sat_order_line_details` | `lnk_order_line` | Order detail id, quantity, unit price, line amount |
 | `esat_customer_city` | `lnk_customer_city` | Effectivity (`is_active`): the customer's current city |
 | `esat_truck_city` | `lnk_truck_city` | Effectivity (`is_active`): the truck's current primary city |
+| `esat_truck_franchise` | `lnk_truck_franchise` | Effectivity (`is_active`): the franchise currently operating the truck |
+| `esat_truck_menu_type` | `lnk_truck_menu_type` | Effectivity (`is_active`): the brand the truck currently sells |
+| `esat_franchise_city` | `lnk_franchise_city` | Effectivity (`is_active`): the franchise's current city |
 
 The order tables run on a larger warehouse (`compute_big`). The business vault (PITs,
 bridges, derived satellites) and the marts are not built yet.

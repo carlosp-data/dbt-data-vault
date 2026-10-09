@@ -33,8 +33,6 @@ models:
         description: Region, state or province where the truck operates.
       - name: truck_region_code
         description: ISO 3166-2 code of the region.
-      - name: truck_country_code
-        description: ISO 3166-1 alpha-2 country code.
       - name: is_franchise
         description: True when a franchise operates the truck, false when Tasty Bytes does.
       - name: is_ev

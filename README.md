@@ -70,9 +70,10 @@ key: a NULL business key (such as the customer of an anonymous order) hashes to 
 | Table | Parent | Payload |
 |---|---|---|
 | `sat_customer_pii` | `hub_customer` | Name, email, phone, birth date, postal code |
-| `sat_customer_profile` | `hub_customer` | Gender, language, favourite brand, marital status, children, sign-up date |
+| `sat_customer_profile` | `hub_customer` | Gender, language, marital status, children, sign-up date |
 | `sat_franchise_pii` | `hub_franchise` | Franchisee name, email, phone |
-| `sat_location_details` | `hub_location` | Placekey, name, region, country code |
+| `sat_location_details` | `hub_location` | Placekey, name, region |
+| `sat_city_details` | `hub_city` | ISO country code (from locations, the reference source for cities) |
 | `sat_product_details` | `hub_product` | Name, category, subcategory, health flags, ingredients |
 | `sat_product_pricing` | `hub_product` | Cost of goods, sale price |
 | `sat_menu_type_details` | `hub_menu_type` | Menu type (cuisine), truck brand name |

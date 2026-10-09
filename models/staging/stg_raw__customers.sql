@@ -19,7 +19,7 @@ renamed as (
         trim(country) as country,
         trim(gender) as cust_gender,
         trim(preferred_language) as cust_language,
-        trim(favourite_brand) as cust_fav_brand,
+        -- favourite_brand is not staged: it is NULL for every customer
         trim(marital_status) as cust_marital_status,
         -- text domain: '0'..'4', '5+' or 'Undisclosed'; kept as-is, decoded downstream
         trim(children_count) as cust_children_nr,
@@ -45,7 +45,6 @@ final as (
         cust_zipcode,
         cust_gender,
         cust_language,
-        cust_fav_brand,
         cust_marital_status,
         cust_children_nr,
         cust_sign_up_date,
@@ -59,7 +58,6 @@ final as (
         ]) }} as customer_pii_hashdiff,
         {{ dbt_utils.generate_surrogate_key([
             'cust_children_nr',
-            'cust_fav_brand',
             'cust_gender',
             'cust_language',
             'cust_marital_status',

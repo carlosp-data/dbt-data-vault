@@ -15,7 +15,7 @@ renamed as (
         trim(country) as country,
         trim(region) as truck_region,
         trim(iso_region) as truck_region_code,
-        upper(trim(iso_country_code)) as truck_country_code,
+        -- iso_country_code is not staged: it is an attribute of the city (sat_city_details)
         -- flags are stored as 0/1 numbers in the source
         franchise_flag = 1 as is_franchise,
         ev_flag = 1 as is_ev,
@@ -44,7 +44,6 @@ final as (
         country,
         truck_region,
         truck_region_code,
-        truck_country_code,
         is_franchise,
         is_ev,
         truck_make,
@@ -54,7 +53,6 @@ final as (
         {{ dbt_utils.generate_surrogate_key([
             'is_ev',
             'is_franchise',
-            'truck_country_code',
             'truck_make',
             'truck_model',
             'truck_model_year',

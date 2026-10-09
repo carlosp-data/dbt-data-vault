@@ -4,7 +4,8 @@ models:
   - name: sat_location_details
     description: >
       Descriptive attributes of selling locations. One row per location and change. Grain:
-      (`location_hk`, `load_dts`). City and country are in `lnk_location_city`.
+      (`location_hk`, `load_dts`). City and country are in `lnk_location_city`, and the
+      country code is a city attribute in `sat_city_details`.
       Loaded from `stg_raw__locations`. Insert-only, built with the `sat` macro. Includes the ghost record (NULL payload).
     data_tests:
       - dbt_utils.unique_combination_of_columns:
@@ -33,8 +34,6 @@ models:
         description: Name of the location (venue, street or landmark).
       - name: location_region
         description: Region, state or province of the location.
-      - name: location_country_code
-        description: ISO 3166-1 alpha-2 country code.
       - name: record_source
         description: Source table of this version. 'SYSTEM' for the ghost record.
         data_tests:

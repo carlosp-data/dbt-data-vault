@@ -6,7 +6,8 @@ models:
       Members of the Tasty Bytes loyalty program, one row per customer.
       Grain: `customer_id` (primary key). PII and profile attributes are hashed separately so
       they can load into different satellites. Coded values ('Undisclosed', '5+') are kept as
-      in the source and decoded downstream. City and country are not satellite attributes:
+      in the source and decoded downstream. The source column `favourite_brand` is not staged
+      because it is NULL for every customer. City and country are not satellite attributes:
       they are the business key of `hub_city`, which other entities share, so a change of
       residence shows up as a new `customer_city_hk` instead of a new profile hashdiff.
       Feeds `hub_customer`, `hub_city`, `lnk_customer_city` (with `esat_customer_city`),
@@ -67,8 +68,6 @@ models:
           - accepted_values:
               arguments:
                 values: ['Arabic', 'English', 'French', 'German', 'Hindi', 'Japanese', 'Korean', 'Polish', 'Portuguese', 'Spanish', 'Swedish']
-      - name: cust_fav_brand
-        description: Truck brand the customer marked as favourite.
       - name: cust_marital_status
         description: Self-reported marital status. The source spells 'Divorced/Seperated' this way.
         data_tests:

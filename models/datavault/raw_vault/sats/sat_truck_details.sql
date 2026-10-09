@@ -4,7 +4,6 @@
     payload_columns=[
         'truck_region',
         'truck_region_code',
-        'truck_country_code',
         'is_franchise',
         'is_ev',
         'truck_make',

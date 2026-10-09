@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: sat_city_details
+    description: >
+      Descriptive attributes of cities: the ISO country code. One row per city and change. Grain:
+      (`city_hk`, `load_dts`). Loaded from `stg_raw__locations` only, the reference source for
+      cities: it repeats each city once per location, always with the same code, and the `sat`
+      macro loads the distinct rows. The `hub_city` keys spelled with country 'United Kingdom'
+      (London and Manchester, from customers) have no row here: `sal_city` in the business vault
+      maps them to the 'England' keys, whose row applies. Insert-only, built with the `sat` macro.
+      Includes the ghost record (NULL payload).
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: ['city_hk', 'load_dts']
+    columns:
+      - name: city_hk
+        description: Hash key of the parent city. All zeros for the ghost record.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('hub_city')
+                field: city_hk
+      - name: load_dts
+        description: Load timestamp of the batch that inserted this version. 1900-01-01 for the ghost record.
+        data_tests:
+          - not_null
+      - name: city_details_hashdiff
+        description: Hashdiff over the payload columns. All zeros for the ghost record.
+        data_tests:
+          - not_null
+      - name: country_code
+        description: ISO 3166-1 alpha-2 code of the city's country. NULL for the ghost record.
+      - name: record_source
+        description: Source table of this version. 'SYSTEM' for the ghost record.
+        data_tests:
+          - not_null

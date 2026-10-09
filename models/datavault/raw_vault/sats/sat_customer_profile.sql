@@ -4,7 +4,6 @@
     payload_columns=[
         'cust_gender',
         'cust_language',
-        'cust_fav_brand',
         'cust_marital_status',
         'cust_children_nr',
         'cust_sign_up_date'

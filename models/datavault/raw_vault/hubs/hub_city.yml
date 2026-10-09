@@ -9,7 +9,8 @@ models:
       arrives from several of them in one batch, the row comes from the first in this order:
       locations, trucks, franchises, customers. The raw vault keeps source spellings, so London
       and Manchester appear twice: with country 'England' (franchises, locations, trucks) and
-      'United Kingdom' (customers). Includes the ghost record. Insert-only, built with the `hub`
+      'United Kingdom' (customers). City attributes (the ISO country code) are in
+      `sat_city_details`, loaded from locations only. Includes the ghost record. Insert-only, built with the `hub`
       macro.
     data_tests:
       - dbt_utils.unique_combination_of_columns:

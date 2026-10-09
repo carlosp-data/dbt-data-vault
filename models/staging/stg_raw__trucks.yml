@@ -7,7 +7,9 @@ models:
       Grain: `truck_id` (primary key). Each truck belongs to one franchise and sells one menu
       type (brand). Company-operated trucks (`is_franchise = false`) belong to franchise 1.
       The primary city and country are the business key of `hub_city`, so a change of primary
-      city shows up as a new `truck_city_hk` instead of a new `truck_details_hashdiff`.
+      city shows up as a new `truck_city_hk` instead of a new `truck_details_hashdiff`. The
+      source's ISO country code is not staged: it always matches the city's code in `locations`,
+      the reference source for `sat_city_details`.
       Feeds `hub_truck`, `hub_city`, the truck ↔ franchise, truck ↔ menu type and truck ↔ city
       links (the last one with `esat_truck_city`), and `sat_truck_details`.
     columns:
@@ -78,8 +80,6 @@ models:
         description: Region, state or province where the truck operates.
       - name: truck_region_code
         description: ISO 3166-2 code of the region.
-      - name: truck_country_code
-        description: ISO 3166-1 alpha-2 country code.
       - name: is_franchise
         description: True when a franchise operates the truck, false when Tasty Bytes does.
         data_tests:

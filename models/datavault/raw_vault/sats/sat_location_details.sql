@@ -4,8 +4,7 @@
     payload_columns=[
         'placekey',
         'location_name',
-        'location_region',
-        'location_country_code'
+        'location_region'
     ],
     src_model='stg_raw__locations'
 ) }}

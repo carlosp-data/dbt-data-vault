@@ -3,10 +3,11 @@ version: 2
 models:
   - name: lnk_franchise_city
     description: >
-      Link between a franchise and the city where it is based, one row per (franchise, city)
-      pair ever seen. Grain: `franchise_city_hk` (primary key). Staging keeps one city per
-      franchise (see `stg_raw__franchises`). The franchise's current city is the active pair in
-      `esat_franchise_city`.
+      Link between a franchise and a city it operates in, one row per (franchise, city) pair
+      ever seen. Grain: `franchise_city_hk` (primary key). A franchise can operate in several
+      cities at once and has no main city (5 franchises have two). The link has no effectivity
+      satellite: the source does not say which cities are still active, so every pair is kept
+      as a city where the franchise has operated.
       Loaded from `stg_raw__franchises`. Insert-only, built with the `link` macro.
     columns:
       - name: franchise_city_hk

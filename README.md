@@ -22,7 +22,7 @@ Each table has one staging view, `stg_raw__<table>`.
 | Table | Grain (business key) | Rows | Description |
 |---|---|---:|---|
 | `customers` | `customer_id` | 222,540 | Loyalty-program members, with PII and profile attributes. |
-| `franchises` | `franchise_id` | 335 | Franchisees operating trucks. 325 distinct ids; staging keeps one row per id. Franchise 1 is Tasty Bytes itself. |
+| `franchises` | `franchise_id`, city | 335 | Franchisees operating trucks, one row per franchise and city. 325 distinct ids, 330 distinct rows. Franchise 1 is Tasty Bytes itself. |
 | `locations` | `location_id` | 13,093 | Places where the trucks sell, with city, region and country. |
 | `products` | `menu_item_id` | 100 | Menu items with category, cost, price and health metrics, for 15 menu types (truck brands). |
 | `trucks` | `truck_id` | 450 | Food trucks, with their franchise, menu type, primary city and vehicle data. |
@@ -58,7 +58,7 @@ key: a NULL business key (such as the customer of an anonymous order) hashes to 
 | `lnk_truck_menu_type` | truck ↔ menu type | trucks |
 | `lnk_product_menu_type` | product ↔ menu type | products |
 | `lnk_customer_city` | customer ↔ city | customers |
-| `lnk_franchise_city` | franchise ↔ city | franchises |
+| `lnk_franchise_city` | franchise ↔ city (a franchise can operate in several cities) | franchises |
 | `lnk_location_city` | location ↔ city | locations |
 | `lnk_truck_city` | truck ↔ city | trucks |
 | `lnk_shift_truck_location` | shift ↔ truck ↔ location | orders_header |
@@ -85,7 +85,6 @@ key: a NULL business key (such as the customer of an anonymous order) hashes to 
 | `esat_truck_city` | `lnk_truck_city` | Effectivity (`is_active`): the truck's current primary city |
 | `esat_truck_franchise` | `lnk_truck_franchise` | Effectivity (`is_active`): the franchise currently operating the truck |
 | `esat_truck_menu_type` | `lnk_truck_menu_type` | Effectivity (`is_active`): the brand the truck currently sells |
-| `esat_franchise_city` | `lnk_franchise_city` | Effectivity (`is_active`): the franchise's current city |
 
 The order tables run on a larger warehouse (`compute_big`). The business vault (PITs,
 bridges, derived satellites) and the marts are not built yet.

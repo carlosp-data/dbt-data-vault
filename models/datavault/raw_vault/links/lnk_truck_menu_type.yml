@@ -4,7 +4,9 @@ models:
   - name: lnk_truck_menu_type
     description: >
       Link between a truck and the menu type (brand) it sells, one row per (truck, menu type)
-      pair ever seen. Grain: `truck_menu_type_hk` (primary key). Loaded from `stg_raw__trucks`.
+      pair ever seen. Grain: `truck_menu_type_hk` (primary key). If a truck is rebranded, the new
+      pair is added and the old one stays; the current brand is the active pair in
+      `esat_truck_menu_type`. Loaded from `stg_raw__trucks`.
       Insert-only, built with the `link` macro.
     columns:
       - name: truck_menu_type_hk

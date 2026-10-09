@@ -13,8 +13,9 @@ renamed as (
         -- business key of hub_city, shared with customers, franchises and trucks
         trim(city) as city,
         trim(country) as country,
-        trim(region) as location_region,
-        upper(trim(iso_country_code)) as location_country_code
+        -- attribute of the city, not of the location: loaded into sat_city_details
+        upper(trim(iso_country_code)) as country_code,
+        trim(region) as location_region
     from source
 
 ),
@@ -31,13 +32,15 @@ final as (
         placekey,
         location_name,
         location_region,
-        location_country_code,
+        country_code,
         {{ dbt_utils.generate_surrogate_key([
-            'location_country_code',
             'location_name',
             'location_region',
             'placekey'
         ]) }} as location_details_hashdiff,
+        {{ dbt_utils.generate_surrogate_key([
+            'country_code'
+        ]) }} as city_details_hashdiff,
         {{ record_source(source('raw', 'locations')) }} as record_source
     from renamed
 

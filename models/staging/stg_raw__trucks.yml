@@ -7,9 +7,12 @@ models:
       Grain: `truck_id` (primary key). Each truck belongs to one franchise and sells one menu
       type (brand). Company-operated trucks (`is_franchise = false`) belong to franchise 1.
       The primary city and country are the business key of `hub_city`, so a change of primary
-      city shows up as a new `truck_city_hk` instead of a new `truck_details_hashdiff`.
+      city shows up as a new `truck_city_hk` instead of a new `truck_details_hashdiff`. The
+      source's ISO country code is not staged: it always matches the city's code in `locations`,
+      the reference source for `sat_city_details`.
       Feeds `hub_truck`, `hub_city`, the truck ↔ franchise, truck ↔ menu type and truck ↔ city
-      links (the last one with `esat_truck_city`), and `sat_truck_details`.
+      links with their effectivity satellites (`esat_truck_franchise`, `esat_truck_menu_type`,
+      `esat_truck_city`), and `sat_truck_details`.
     columns:
       - name: truck_hk
         description: Hash key of the truck business key (`truck_id`).
@@ -75,11 +78,13 @@ models:
         data_tests:
           - not_null
       - name: truck_region
-        description: Region, state or province where the truck operates.
-      - name: truck_region_code
-        description: ISO 3166-2 code of the region.
-      - name: truck_country_code
-        description: ISO 3166-1 alpha-2 country code.
+        description: >
+          Region, state or province of the truck's primary city, from the source column
+          `iso_region`. Despite its name it is not an ISO 3166-2 code: it uses the same values as
+          `stg_raw__locations.location_region` (one of the city's location regions in every
+          city), including state abbreviations such as 'NY' or 'QC' in the US and Canada. The
+          source column `region` is not staged: it names regions differently and is sometimes
+          wrong for the city (Berlin → 'Brandenburg').
       - name: is_franchise
         description: True when a franchise operates the truck, false when Tasty Bytes does.
         data_tests:

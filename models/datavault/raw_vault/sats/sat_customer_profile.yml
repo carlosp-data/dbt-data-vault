@@ -3,7 +3,8 @@ version: 2
 models:
   - name: sat_customer_profile
     description: >
-      Non-PII profile of loyalty customers (demographics and preferences). One row per customer
+      Non-PII profile of loyalty customers (demographics and preferences). The source's
+      favourite brand is not loaded because it is NULL for every customer. One row per customer
       and change. Grain: (`customer_hk`, `load_dts`). A row is inserted when a customer is new
       or `customer_profile_hashdiff` differs from the customer's latest row. Coded values
       ('Undisclosed', '5+') are kept as in the source. Loaded from
@@ -33,8 +34,6 @@ models:
         description: Self-reported gender ('Female', 'Male' or 'Undisclosed').
       - name: cust_language
         description: Preferred language.
-      - name: cust_fav_brand
-        description: Truck brand the customer marked as favourite.
       - name: cust_marital_status
         description: Self-reported marital status. The source spells 'Divorced/Seperated' this way.
       - name: cust_children_nr

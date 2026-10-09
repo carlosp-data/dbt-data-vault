@@ -4,16 +4,6 @@ source as (
     select * from {{ source('raw', 'franchises') }}
 ),
 
-deduplicated as (
-
-    select *
-    from source
-    -- franchise_id is not unique in the source: some ids are exact duplicates and others
-    -- appear once per city. Keep one deterministic row per franchise.
-    qualify row_number() over (partition by franchise_id order by country, city) = 1
-
-),
-
 renamed as (
 
     select
@@ -25,7 +15,7 @@ renamed as (
         trim(country) as country,
         trim(e_mail) as franchise_email,
         trim(phone_number) as franchise_phone
-    from deduplicated
+    from source
 
 ),
 

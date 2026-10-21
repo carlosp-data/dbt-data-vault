@@ -112,7 +112,7 @@ flowchart LR
 ```
 
 <details>
-<summary>Full lineage: sources → staging → raw vault</summary>
+<summary style="font-weight:bold">Full lineage: sources → staging → raw vault</summary>
 
 ```mermaid
 flowchart LR

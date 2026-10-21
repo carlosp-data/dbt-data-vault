@@ -45,9 +45,8 @@ macros:
       Body of an insert-only hub model. Unions the hash key, business keys and `record_source`
       of one or more staging models, adds the ghost record, keeps one row per hash key (the
       ghost record first, then the first model in `src_models`) and, on incremental runs,
-      inserts only keys not yet in the hub.
-      New rows are stamped with `load_dts()`. Output columns: hash key, business keys,
-      `load_dts`, `record_source`.
+      inserts only keys not yet in the hub. New rows are stamped with `load_dts()`.
+      Output columns: hash key, business keys, `load_dts`, `record_source`.
     arguments:
       - name: hk
         type: string
@@ -90,10 +89,10 @@ macros:
     description: >
       Body of an insert-only satellite model. Takes the distinct parent key, hashdiff, payload
       and `record_source` of one staging model and adds the ghost record (all-zeros key and
-      hashdiff, NULL payload). On incremental runs it
-      inserts a row only when the parent key is new or its hashdiff differs from the latest row
-      of that key in the satellite. New rows are stamped with `load_dts()`. Output columns:
-      parent hash key, `load_dts`, hashdiff, payload, `record_source`.
+      hashdiff, NULL payload). On incremental runs it inserts a row only when the parent key is
+      new or its hashdiff differs from the latest row of that key in the satellite.
+      New rows are stamped with `load_dts()`.
+      Output columns: parent hash key, `load_dts`, hashdiff, payload, `record_source`.
     arguments:
       - name: parent_hk
         type: string

@@ -10,9 +10,9 @@ models:
       city shows up as a new `truck_city_hk` instead of a new `truck_details_hashdiff`. The
       source's ISO country code is not staged: it always matches the city's code in `locations`,
       the reference source for `sat_city_details`.
-      Feeds `hub_truck`, `hub_city`, the truck ↔ franchise, truck ↔ menu type and truck ↔ city
-      links with their effectivity satellites (`esat_truck_franchise`, `esat_truck_menu_type`,
-      `esat_truck_city`), and `sat_truck_details`.
+      Feeds `hub_truck`, `hub_city`, the truck <-> franchise, truck <-> menu type and
+      truck <-> city links with their effectivity satellites (`esat_truck_franchise`,
+      `esat_truck_menu_type`, `esat_truck_city`), and `sat_truck_details`.
     columns:
       - name: truck_hk
         description: Hash key of the truck business key (`truck_id`).
@@ -84,7 +84,7 @@ models:
           `stg_raw__locations.location_region` (one of the city's location regions in every
           city), including state abbreviations such as 'NY' or 'QC' in the US and Canada. The
           source column `region` is not staged: it names regions differently and is sometimes
-          wrong for the city (Berlin → 'Brandenburg').
+          wrong for the city (Berlin -> 'Brandenburg').
       - name: is_franchise
         description: True when a franchise operates the truck, false when Tasty Bytes does.
         data_tests:
@@ -102,7 +102,7 @@ models:
       - name: truck_opening_date
         description: Date the truck started operating.
       - name: truck_details_hashdiff
-        description: Hashdiff over the descriptive attributes of the truck, excluding city and country (tracked by the truck ↔ city link).
+        description: Hashdiff over the descriptive attributes of the truck, excluding city and country (tracked by the truck <-> city link).
         data_tests:
           - not_null
       - name: record_source

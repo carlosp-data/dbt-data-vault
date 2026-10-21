@@ -3,10 +3,11 @@ version: 2
 models:
   - name: sat_location_details
     description: >
-      Descriptive attributes of selling locations. One row per location and change. Grain:
-      (`location_hk`, `load_dts`). City and country are in `lnk_location_city`, and the
-      country code is a city attribute in `sat_city_details`.
-      Loaded from `stg_raw__locations`. Insert-only, built with the `sat` macro. Includes the ghost record (NULL payload).
+      Descriptive attributes of selling locations. One row per location and change.
+      Grain: (`location_hk`, `load_dts`). City and country are in `lnk_location_city`,
+      and the country code is a city attribute in `sat_city_details`.
+      Loaded from `stg_raw__locations`. Insert-only, built with the `sat` macro.
+      Includes the ghost record (NULL payload).
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

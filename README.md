@@ -1,95 +1,157 @@
 # dbt-data-vault
 
-Data engineering project showcasing a modern data warehouse on Snowflake using
-dbt, Data Vault 2.0 for core data modeling, and SCD Type 2 dimensional marts.
-Designed to demonstrate scalable data modeling, ELT workflows, testing, and
-analytics engineering best practices.
+A data warehouse on **Snowflake**, built with **dbt** on Snowflake's fictional **Tasty Bytes**
+food-truck data (~920 million source rows). Source data is cleaned in a staging layer,
+integrated with full history in a **Data Vault 2.0** layer, and will be served to BI as a star
+schema with SCD Type 2 dimensions. The project runs on the **dbt Fusion engine**.
+
+## What this project demonstrates
+
+**Data modeling**
+- [**Layered architecture with clear responsibilities**](docs/dbt_design.md#layers-and-responsibilities):
+  staging cleans and types source data, the Data Vault integrates it with full history, and the
+  marts serve BI (roadmap).
+- [**Modeling decided by data profiling**](docs/staging.md#data-profiling-findings): grain,
+  nullability and value domains were checked against ~920M source rows before modeling, and the
+  findings are written in the model docs.
+
+**dbt engineering**
+- [**Reusable macros instead of repeated SQL**](docs/dbt_design.md#macros-as-the-loading-framework):
+  hub, link and satellite models are one short macro call each. The loading logic lives in
+  documented project macros.
+- [**Incremental, insert-only loading**](docs/dbt_design.md#incremental-insert-only-loading):
+  append-only models where re-running a load adds nothing, with history simulated by setting the
+  load timestamp through `--vars`.
+- [**SQL checked before it runs**](docs/dbt_design.md#static-analysis-with-dbt-fusion): the dbt
+  Fusion engine checks every model's SQL at compile time, so errors show up before anything runs
+  on the warehouse.
+
+**Testing and documentation**
+- [**Tests scaled for the data volume**](docs/testing.md#tests-at-scale): ~350 data tests and 8 unit
+  tests, including incremental scenarios. On the largest tables, tests check only the current
+  batch, and full scans are tagged so they can be skipped.
+- [**Every model and column documented**](docs/dbt_design.md#conventions): one YAML file per
+  model, with grain, keys and data facts.
+
+**Snowflake operations**
+- [**Compute and access matched to the workload**](docs/dbt_design.md#environments-and-access):
+  separate warehouses per environment and a larger warehouse set per model for the order tables.
+  Dev and prod use separate roles, and credentials come from environment variables.
 
 ## Architecture
 
-| Layer | Folder | Schema (dev) | Materialization |
-|---|---|---|---|
-| Staging | `models/staging/` | `dev_stg` | view |
-| Data Vault | `models/datavault/` | `dev_vault` | incremental, insert-only |
-| Marts | `models/marts/` | `dev_marts` | table |
+```mermaid
+flowchart LR
+    src[(Snowflake<br/>source tables)] --> stg[Staging<br/>views]
+    stg --> rv[Raw vault<br/>hubs, links, satellites]
+    rv -.-> bv[Business vault<br/>PITs, bridges]
+    bv -.-> marts[Marts<br/>star schema, KPIs]
+    rv -.-> marts
 
-## Source tables
+    classDef built fill:#B3D9FF,stroke:#555,color:#000
+    classDef planned fill:#EEEEEE,stroke:#999,stroke-dasharray:4 3,color:#555
+    class src,stg,rv built
+    class bv,marts planned
+```
 
-The data is Snowflake's fictional **Tasty Bytes** food-truck company, loaded once from
-`s3://sfquickstarts/tasty-bytes-builder-education/` into `tasty_bytes.source` (see `db_init/`).
-Each table has one staging view, `stg_raw__<table>`.
+| Layer | Folder | Schema (dev) | Materialization | Status |
+|---|---|---|---|---|
+| Staging | `models/staging/` | `dev_stg` | view | Built |
+| Data Vault | `models/datavault/` | `dev_vault` | incremental, insert-only | Raw vault built, business vault planned |
+| Marts | `models/marts/` | `dev_marts` | table | Planned |
+
+- **Staging** renames, casts and flattens the source data, and adds the hash keys the vault needs.
+  No joins, no business logic. See [docs/staging.md](docs/staging.md).
+- **Raw vault** stores the data as delivered, around business keys, and keeps every version.
+  No business rules. See [docs/raw_vault.md](docs/raw_vault.md).
+- **Business vault and marts** will apply the business rules and build the star schema for BI.
+
+## Source data
+
+The data comes from the public bucket `s3://sfquickstarts/tasty-bytes-builder-education/`,
+loaded once into `tasty_bytes.source`. Each table has one staging view, `stg_raw__<table>`.
 
 | Table | Grain (business key) | Rows | Description |
 |---|---|---:|---|
 | `customers` | `customer_id` | 222,540 | Loyalty-program members, with PII and profile attributes. |
-| `franchises` | `franchise_id`, city | 335 | Franchisees operating trucks, one row per franchise and city. 325 distinct ids, 330 distinct rows. Franchise 1 is Tasty Bytes itself. |
+| `franchises` | `franchise_id`, city | 335 | Franchisees operating trucks, one row per franchise and city. Franchise 1 is Tasty Bytes itself. |
 | `locations` | `location_id` | 13,093 | Places where the trucks sell, with city, region and country. |
-| `products` | `menu_item_id` | 100 | Menu items with category, cost, price and health metrics, for 15 menu types (truck brands). |
-| `trucks` | `truck_id` | 450 | Food trucks, with their franchise, menu type, primary city and vehicle data. |
+| `products` | `menu_item_id` | 100 | Menu items with category, cost, price and health metrics, for 15 truck brands. |
+| `trucks` | `truck_id` | 450 | Food trucks, with their franchise, brand, primary city and vehicle data. |
 | `orders_header` | `order_id` | ~248M | Orders placed at a truck, location and shift, optionally by a loyalty customer (2019-01 to 2022-11). |
 | `orders_detail` | `order_detail_id` | ~674M | Order lines: product, quantity, unit price and line amount. |
 
-## Raw Data Vault tables (RV)
+## Data Vault at a glance
 
-Raw vault in `models/datavault/raw_vault/`. Every object is loaded insert-only by a project
-macro (`macros/datavault/`): `hub`, `link`, `sat` and `eff_sat`. Each row is stamped with
-`load_dts` and `record_source`. Every hub and satellite holds a ghost record with an all-zeros
-key: a NULL business key (such as the customer of an anonymous order) hashes to it.
+The raw vault has **9 hubs, 10 links, 12 satellites and 4 effectivity satellites**, all loaded
+insert-only by project macros. Business entities (customer, truck, franchise, location, product,
+brand, city, order, shift) are hubs; their relationships are links; descriptive attributes are
+satellites, with PII kept in separate satellites. The model diagram, design decisions and full
+table list are in [docs/raw_vault.md](docs/raw_vault.md).
 
-### Hubs
+## Project structure
 
-| Table | Business key | Loaded from |
-|---|---|---|
-| `hub_customer` | `customer_id` | customers |
-| `hub_franchise` | `franchise_id` | franchises, trucks |
-| `hub_truck` | `truck_id` | trucks |
-| `hub_location` | `location_id` | locations |
-| `hub_product` | `product_id` | products |
-| `hub_menu_type` | `menu_type_id` | products, trucks |
-| `hub_city` | `city`, `country` | locations, trucks, franchises, customers |
-| `hub_order` | `order_id` | orders_header |
-| `hub_shift` | `shift_id` | orders_header |
+```
+db_init/                  Snowflake setup: database, roles, warehouses, source load
+macros/datavault/         Loading macros (hub, link, sat, eff_sat) and hashing helpers
+models/
+  staging/                One view per source table, plus source definitions
+  datavault/raw_vault/    hubs/, links/, sats/
+  marts/                  (roadmap)
+docs/                     Design documentation
+dbt_project.yml           Layer configuration (schemas, materializations, static analysis)
+profiles.yml              dev and prod targets, credentials from environment variables
+```
 
-### Links
+## Getting started
 
-| Table | Hubs | Loaded from |
-|---|---|---|
-| `lnk_truck_franchise` | truck ↔ franchise | trucks |
-| `lnk_truck_menu_type` | truck ↔ menu type | trucks |
-| `lnk_product_menu_type` | product ↔ menu type | products |
-| `lnk_customer_city` | customer ↔ city | customers |
-| `lnk_franchise_city` | franchise ↔ city (a franchise can operate in several cities) | franchises |
-| `lnk_location_city` | location ↔ city | locations |
-| `lnk_truck_city` | truck ↔ city | trucks |
-| `lnk_shift_truck_location` | shift ↔ truck ↔ location | orders_header |
-| `lnk_order_shift_customer` | order ↔ shift ↔ customer (ghost customer for anonymous orders) | orders_header |
-| `lnk_order_line` | order ↔ product, with `line_number` as dependent child key | orders_detail |
+**Prerequisites**: a Snowflake account with the `ACCOUNTADMIN` role (a trial account works) and
+the [dbt Fusion engine](https://docs.getdbt.com/docs/fusion) 2.0.
 
-### Satellites
+1. **Set up Snowflake.** In a Snowflake worksheet, run
+   [`db_init/tasty_bytes_admin.sql`](db_init/tasty_bytes_admin.sql) (set your Snowflake user
+   in `SET dbt_user` at the top), then [`db_init/tasty_bytes_source.sql`](db_init/tasty_bytes_source.sql) to load the
+   source tables.
+2. **Set the credentials.** Copy `.env.example` to `.env` and fill in your account, user and
+   password. dbt Fusion reads `.env` from the project root.
+3. **Build.**
 
-| Table | Parent | Payload |
-|---|---|---|
-| `sat_customer_pii` | `hub_customer` | Name, email, phone, birth date, postal code |
-| `sat_customer_profile` | `hub_customer` | Gender, language, marital status, children, sign-up date |
-| `sat_franchise_pii` | `hub_franchise` | Franchisee name, email, phone |
-| `sat_location_details` | `hub_location` | Placekey, name, region |
-| `sat_city_details` | `hub_city` | ISO country code (from locations, the reference source for cities) |
-| `sat_product_details` | `hub_product` | Name, category, subcategory, health flags, ingredients |
-| `sat_product_pricing` | `hub_product` | Cost of goods, sale price |
-| `sat_menu_type_details` | `hub_menu_type` | Menu type (cuisine), truck brand name |
-| `sat_truck_details` | `hub_truck` | Region, ownership and EV flags, make, model, year, opening date |
-| `sat_order_details` | `hub_order` | Order date and timestamp, currency, amount, total |
-| `sat_shift_details` | `hub_shift` | Shift date, start and end time |
-| `sat_order_line_details` | `lnk_order_line` | Order detail id, quantity, unit price, line amount |
-| `esat_customer_city` | `lnk_customer_city` | Effectivity (`is_active`): the customer's current city |
-| `esat_truck_city` | `lnk_truck_city` | Effectivity (`is_active`): the truck's current primary city |
-| `esat_truck_franchise` | `lnk_truck_franchise` | Effectivity (`is_active`): the franchise currently operating the truck |
-| `esat_truck_menu_type` | `lnk_truck_menu_type` | Effectivity (`is_active`): the brand the truck currently sells |
+   ```bash
+   dbt deps                                        # install dbt_utils
+   dbt debug                                       # check the connection
+   dbt build -s staging                            # staging views and their tests
+   dbt build -s datavault --exclude tag:heavy_test # raw vault, skipping full-scan tests
+   ```
 
-The order tables run on a larger warehouse (`compute_big`). The business vault (PITs,
-bridges, derived satellites) and the marts are not built yet.
+The order tables hold ~920M rows, and their models use the larger `compute_big` warehouse. Use
+`--exclude tag:large_table` to build everything else first.
 
-# License
+## Testing
+
+~350 data tests and 8 unit tests. Every model has key, nullability and reference tests, and the
+loading macros are unit-tested on first-load and incremental scenarios. On the order tables,
+tests check only the current batch, and full scans are tagged `heavy_test`. See
+[docs/testing.md](docs/testing.md).
+
+## Roadmap
+
+1. **Business vault**: point-in-time tables, a bridge for orders, a same-as link for city
+   spellings, and derived satellites for margins and member history.
+2. **Marts**: a star schema with SCD Type 2 dimensions (customer, truck, product), facts at order
+   line, shift and customer-month grain, and monthly KPI models.
+3. **Simulated loads**: data sets loaded in date order to show history building up in the vault
+   and the SCD2 dimensions.
+
+## Documentation
+
+| Document | Content |
+|---|---|
+| [docs/dbt_design.md](docs/dbt_design.md) | Layers, environments, conventions, macros, incremental strategy, Fusion static analysis, decision log. |
+| [docs/staging.md](docs/staging.md) | Source data, data profiling findings, staging rules and models. |
+| [docs/raw_vault.md](docs/raw_vault.md) | Data Vault standards, ghost records, model diagram, design decisions, table reference. |
+| [docs/testing.md](docs/testing.md) | Testing approach by layer, tests at scale, unit tests. |
+
+## License
 
 This is a personal portfolio project. The source code is provided for viewing
 and evaluation purposes only. All rights reserved. See [LICENSE](LICENSE) for details.

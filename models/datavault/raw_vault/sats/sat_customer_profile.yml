@@ -7,8 +7,8 @@ models:
       favourite brand is not loaded because it is NULL for every customer. One row per customer
       and change. Grain: (`customer_hk`, `load_dts`). A row is inserted when a customer is new
       or `customer_profile_hashdiff` differs from the customer's latest row. Coded values
-      ('Undisclosed', '5+') are kept as in the source. Loaded from
-      `stg_raw__customers`. Insert-only, built with the `sat` macro. Includes the ghost record (NULL payload).
+      ('Undisclosed', '5+') are kept as in the source. Loaded from `stg_raw__customers`.
+      Insert-only, built with the `sat` macro. Includes the ghost record (NULL payload).
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

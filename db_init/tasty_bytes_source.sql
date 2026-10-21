@@ -1,4 +1,12 @@
 /*--
+Loads the Tasty Bytes source tables from the public Snowflake quickstart bucket into
+'tasty_bytes.source'. Run it after 'tasty_bytes_admin.sql'.
+--*/
+
+USE ROLE sysadmin;
+USE WAREHOUSE compute_wh;
+
+/*--
 file format and stage creation
 --*/
 

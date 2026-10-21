@@ -4,7 +4,7 @@ models:
   - name: esat_truck_menu_type
     description: >
       Effectivity satellite on `lnk_truck_menu_type`, driven by the truck: it records when a
-      truck ↔ menu type (brand) pair becomes active or inactive. When a truck is rebranded, the
+      truck <-> menu type (brand) pair becomes active or inactive. When a truck is rebranded, the
       load inserts the new pair as active and the old pair as inactive. The latest row of each
       pair gives its current status, and a truck has at most one active pair. A rebrand is
       independent of a transfer (`esat_truck_franchise`). Grain: (`truck_menu_type_hk`,
@@ -17,7 +17,7 @@ models:
             combination_of_columns: ['truck_menu_type_hk', 'load_dts']
     columns:
       - name: truck_menu_type_hk
-        description: Hash key of the parent link row (truck ↔ menu type pair).
+        description: Hash key of the parent link row (truck <-> menu type pair).
         data_tests:
           - not_null
           - relationships:

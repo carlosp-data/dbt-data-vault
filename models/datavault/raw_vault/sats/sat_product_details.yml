@@ -5,8 +5,8 @@ models:
     description: >
       Descriptive attributes of products (menu items): names, category and health metrics.
       Prices are in `sat_product_pricing`, which changes at a different rate. One row per
-      product and change. Grain: (`product_hk`, `load_dts`). Loaded
-      from `stg_raw__products`. Insert-only, built with the `sat` macro. Includes the ghost record (NULL payload).
+      product and change. Grain: (`product_hk`, `load_dts`). Loaded from `stg_raw__products`.
+      Insert-only, built with the `sat` macro. Includes the ghost record (NULL payload).
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

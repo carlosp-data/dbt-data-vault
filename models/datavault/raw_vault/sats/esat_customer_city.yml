@@ -4,7 +4,7 @@ models:
   - name: esat_customer_city
     description: >
       Effectivity satellite on `lnk_customer_city`, driven by the customer: it records when a
-      customer ↔ city pair becomes active or inactive. When a customer moves, the load inserts
+      customer <-> city pair becomes active or inactive. When a customer moves, the load inserts
       the new pair as active and the old pair as inactive. The latest row of each pair gives its
       current status, and a customer has at most one active pair. Grain:
       (`customer_city_hk`, `load_dts`). A customer missing from a load keeps its current city.
@@ -16,7 +16,7 @@ models:
             combination_of_columns: ['customer_city_hk', 'load_dts']
     columns:
       - name: customer_city_hk
-        description: Hash key of the parent link row (customer ↔ city pair).
+        description: Hash key of the parent link row (customer <-> city pair).
         data_tests:
           - not_null
           - relationships:

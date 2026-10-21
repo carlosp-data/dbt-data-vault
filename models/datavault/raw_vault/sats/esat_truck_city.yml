@@ -4,7 +4,7 @@ models:
   - name: esat_truck_city
     description: >
       Effectivity satellite on `lnk_truck_city`, driven by the truck: it records when a
-      truck ↔ primary city pair becomes active or inactive. When a truck changes its primary
+      truck <-> primary city pair becomes active or inactive. When a truck changes its primary
       city, the load inserts the new pair as active and the old pair as inactive. The latest row
       of each pair gives its current status, and a truck has at most one active pair. Grain:
       (`truck_city_hk`, `load_dts`). A truck missing from a load keeps its current city. No
@@ -16,7 +16,7 @@ models:
             combination_of_columns: ['truck_city_hk', 'load_dts']
     columns:
       - name: truck_city_hk
-        description: Hash key of the parent link row (truck ↔ city pair).
+        description: Hash key of the parent link row (truck <-> city pair).
         data_tests:
           - not_null
           - relationships:

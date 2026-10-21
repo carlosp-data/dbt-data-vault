@@ -8,7 +8,7 @@ models:
       Grain: `product_id` (primary key). Each product belongs to one menu type (truck brand);
       there are 15 menu types. Health metrics are flattened from the
       `menu_item_health_metrics_obj` VARIANT, whose array always holds one element.
-      Feeds `hub_product`, `hub_menu_type`, the product ↔ menu type link,
+      Feeds `hub_product`, `hub_menu_type`, the product <-> menu type link,
       `sat_product_details`, `sat_product_pricing` and `sat_menu_type_details`.
     columns:
       - name: product_hk

@@ -1,10 +1,7 @@
 dbt_packages/
 dbt_internal_packages/
-docs/
 logs/
 target*/
 .vscode/
 .env
 .user.yml
-.claude*
-CLAUDE.md

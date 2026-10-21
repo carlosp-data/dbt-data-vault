@@ -89,7 +89,7 @@ models:
       - name: customer_profile_hashdiff
         description: >
           Hashdiff over the non-PII profile attributes. It excludes city and country, whose
-          changes are tracked by the customer ↔ city link.
+          changes are tracked by the customer <-> city link.
         data_tests:
           - not_null
       - name: record_source

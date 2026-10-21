@@ -1,6 +1,5 @@
 version: 2
 
-# Try using these source definitions instead!
 sources:
   - name: raw
     schema: source

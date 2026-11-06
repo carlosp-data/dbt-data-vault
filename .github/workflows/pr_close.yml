@@ -1,0 +1,42 @@
+name: drop CI schema on PR closed
+
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+env:
+  SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+  SF_USER: ${{ secrets.SF_USER }}
+  SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
+  SF_DATABASE: ${{ secrets.SF_DATABASE }}
+  DBT_CI_SCHEMA: ci_pr_${{ github.event.pull_request.number }}
+
+# Limit concurrent runs of this workflow per PR.
+# Groups are shared across all workflows, so a closed PR would cancel a running `pr_open` build.
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+# Minimum permissions required for the workflow
+permissions:
+  contents: read
+
+jobs:
+  drop-ci-schema:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the PR
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install dbt Fusion
+        run: |
+          curl -fsSL https://public.cdn.getdbt.com/fs/install/install.sh | sh -s -- --update --version 2.0.8
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Drop CI schema if exists
+        run: |
+          dbt deps
+          dbt run-operation drop_ci_schema --target ci

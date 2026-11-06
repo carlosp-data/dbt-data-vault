@@ -1,0 +1,78 @@
+name: dbt CI on PR opened
+
+on:
+  pull_request:
+    branches: [main]
+
+# Limit concurrent runs of this workflow per PR.
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+# Minimum permissions required for the workflow
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      dbt: ${{ steps.filter.outputs.dbt }}
+    steps:
+      - name: Detect dbt-relevant changes
+        id: filter
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          changed=$(gh pr \
+              diff ${{ github.event.pull_request.number }} \
+              --repo ${{ github.repository }} --name-only)
+          echo "Changed files:"; echo "$changed"
+          # models/, macros/, seeds/, root *.yml, and this workflow
+          if echo "$changed" | grep -qE '^(models/|macros/|seeds/|[^/]+\.yml$|\.github/workflows/pr_open\.yml$)'; then
+            echo "dbt=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "dbt=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  build-modified:
+    needs: changes
+    if: needs.changes.outputs.dbt == 'true'
+    runs-on: ubuntu-latest
+    env:
+      SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+      SF_USER: ${{ secrets.SF_USER }}
+      SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
+      SF_DATABASE: ${{ secrets.SF_DATABASE }}
+      DBT_CI_SCHEMA: ci_pr_${{ github.event.pull_request.number }}
+    steps:
+      - name: Check out the PR
+        uses: actions/checkout@v5
+
+      - name: Check out main (reference state)
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          path: main_branch
+
+      - name: Install dbt Fusion
+        run: |
+          curl -fsSL https://public.cdn.getdbt.com/fs/install/install.sh | sh -s -- --update --version 2.0.8
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Build the prod manifest of main
+        working-directory: main_branch
+        run: |
+          dbt deps
+          dbt parse --target prod
+
+      - name: Build and test modified models and their children
+        run: |
+          dbt deps
+          # empty CI schema, in case it contains objects from earlier pushes
+          dbt run-operation drop_ci_schema --target ci
+          # clone large 'incremental' tables to prevent 'full refresh'
+          dbt clone --target ci --selector ci_clone --state main_branch/target
+          dbt build --target ci --selector ci_modified --defer --state main_branch/target

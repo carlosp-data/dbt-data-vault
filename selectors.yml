@@ -1,0 +1,53 @@
+selectors:
+
+  - name: fast_build
+    description: Everything except the full-scan tests on the order tables. The routine dev build.
+    definition:
+      union:
+        - method: fqn
+          value: "*"
+        - exclude:
+            - method: tag
+              value: heavy_test
+
+  - name: raw_vault_light
+    description: Raw vault models and their tests, without the order tables, for quick iterations on master data.
+    definition:
+      union:
+        - method: path
+          value: models/datavault/raw_vault
+        - exclude:
+            - method: tag
+              value: large_table
+
+  - name: ci_modified
+    description: Modified models and their descendants, without full-scan tests. Used by CI with --defer --state.
+    definition:
+      union:
+        - method: state
+          value: modified
+          children: true
+        - exclude:
+            - method: tag
+              value: heavy_test
+
+  - name: ci_clone
+    description: >
+      Large incremental models that ci_modified builds, that exist in prod, and whose own
+      code is unchanged (children of a modified model). CI clones them from prod so they load
+      incrementally. Modified large models are not cloned, so they are built in full to prevent
+      conflits with column changes.
+    definition:
+      union:
+        - intersection:
+            - method: selector
+              value: ci_modified
+            - method: config.materialized
+              value: incremental
+            - method: tag
+              value: large_table
+            - method: state
+              value: old
+        - exclude:
+            - method: state
+              value: modified

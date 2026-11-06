@@ -12,6 +12,11 @@ clean-targets:
   - "logs"
   - "target"
 
+vars:
+  # Load timestamp of vault inserts (format 'YYYY-MM-DD HH24:MI:SS').
+  # null = start time of the dbt invocation. Set it with --vars to simulate a load.
+  load_dts: null
+
 seeds:
   # Builds seeds as tables in '<your_schema_name>_stg'
   tasty_bytes:
@@ -29,6 +34,8 @@ models:
       # insert-only: the loading macros select only new keys and changed rows
       +materialized: incremental
       +incremental_strategy: append
+      # stop when the columns differ from the existing table; rebuild with --full-refresh
+      +on_schema_change: fail
     marts:
       +schema: marts
       +materialized: table

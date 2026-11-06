@@ -1,0 +1,10 @@
+version: 2
+
+macros:
+  - name: drop_ci_schema
+    description: >
+      Operation run when a pull request is closed (`dbt run-operation drop_ci_schema --target ci`).
+      Drops the CI base schema named by the env var `DBT_CI_SCHEMA` (for example `ci_pr_42`) and
+      every layer schema built from it (`ci_pr_42_stg`, `ci_pr_42_vault`, ...). It refuses to run
+      on any target other than `ci`, or when the schema name does not start with `ci_` or holds
+      characters other than lowercase letters, digits and underscores. Takes no arguments.

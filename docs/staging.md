@@ -69,6 +69,13 @@ they are also recorded in each model's YAML description.
 - The sources have no load timestamp or change-tracking column. Each table is a single snapshot, so
   history is built by the vault on each load.
 
+**Source freshness.** Only `orders_header` has a freshness check, on `order_ts`. It warns when the
+latest order is more than 24 hours old and never fails (no `error_after`). It measures event
+latency, which is "are new orders still coming in?", not when rows were loaded into Snowflake. Because
+the data is a snapshot ending in November 2022, `dbt source freshness` always warns: the check shows
+how order latency would be monitored on a live feed. The other tables have no timestamp column, so
+they have no check.
+
 ## Staging rules
 
 - **One view per source table**, `stg_raw__<table>`, with a YAML file of the same name.

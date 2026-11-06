@@ -14,7 +14,7 @@ CREATE SCHEMA IF NOT EXISTS tasty_bytes.source;
 --# ROLES #---------------------------------
 USE ROLE securityadmin;
 
-CREATE ROLE IF NOT EXISTS dev_role COMMENT = 'Role for DEV environment';
+CREATE ROLE IF NOT EXISTS dev_role COMMENT = 'Role for DEV environment, with read access to PROD';
 CREATE ROLE IF NOT EXISTS prod_role COMMENT = 'Role for PROD environment, with no access to DEV';
 
 GRANT ROLE dev_role TO ROLE sysadmin;
@@ -36,13 +36,16 @@ GRANT USAGE ON DATABASE tasty_bytes TO ROLE prod_role;
 GRANT CREATE SCHEMA ON DATABASE tasty_bytes TO ROLE dev_role;
 GRANT CREATE SCHEMA ON DATABASE tasty_bytes TO ROLE prod_role;
 
--- read-only access to the source tables, including the ones loaded after this script
+-- read-only access to the source tables for DEV and PROD roles
 GRANT USAGE ON SCHEMA tasty_bytes.source TO ROLE dev_role;
 GRANT USAGE ON SCHEMA tasty_bytes.source TO ROLE prod_role;
-GRANT SELECT ON ALL TABLES IN SCHEMA tasty_bytes.source TO ROLE dev_role;
-GRANT SELECT ON ALL TABLES IN SCHEMA tasty_bytes.source TO ROLE prod_role;
 GRANT SELECT ON FUTURE TABLES IN SCHEMA tasty_bytes.source TO ROLE dev_role;
 GRANT SELECT ON FUTURE TABLES IN SCHEMA tasty_bytes.source TO ROLE prod_role;
+
+-- read-only access to all schemas for DEV, so that it can also read PROD
+GRANT USAGE ON FUTURE SCHEMAS IN DATABASE tasty_bytes TO ROLE dev_role;
+GRANT SELECT ON FUTURE TABLES IN DATABASE tasty_bytes TO ROLE dev_role;
+GRANT SELECT ON FUTURE VIEWS IN DATABASE tasty_bytes TO ROLE dev_role;
 
 --# COMPUTE #-------------------------------
 

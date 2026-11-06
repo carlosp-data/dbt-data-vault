@@ -17,5 +17,11 @@ sources:
         description: Customer master data containing information about customers who place orders through Tasty Bytes.
       - name: orders_header
         description: Order-level information, with one record per order, including the customer, truck, order date and time, and order totals.
+        config:
+          loaded_at_field: order_ts
+          # Warn-only. The source is a static snapshot ending in Nov 2022.
+          # This config shows how latency should be monitored.
+          freshness:
+            warn_after: {count: 24, period: hour}
       - name: orders_detail
         description: Line-item details for each order, with one record per product ordered, including quantities and item-level amounts.
